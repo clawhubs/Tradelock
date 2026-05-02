@@ -38,7 +38,9 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import { useTradeLockData } from "@/components/tradelock-data-provider";
 import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
+import { getTxExplorerUrl, shortenHash } from "@/lib/explorer";
 import type { CustodyActivityItem, NavItem, ScreenKey, SettingsCard, StatCard, StatusKey, ToneKey, WalletState } from "@/lib/types";
 
 export const toneClasses: Record<ToneKey, string> = {
@@ -176,7 +178,7 @@ export function SummaryRow({
   stacked = false,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   emphasized?: boolean;
   stacked?: boolean;
 }) {
@@ -250,6 +252,7 @@ export function FilterRow({ filters, compact = false }: { filters: string[]; com
       {filters.map((filter, index) => (
         <button
           key={filter}
+          type="button"
           className={`rounded-[8px] border font-medium ${
             index === 0
               ? "border-blue-400/50 bg-blue-500/18 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
@@ -263,20 +266,26 @@ export function FilterRow({ filters, compact = false }: { filters: string[]; com
   );
 }
 
-export function ToolbarButton({ label, icon: Icon }: { label: string; icon: LucideIcon }) {
+export function ToolbarButton({ label, icon: Icon, onClick, disabled = false }: { label: string; icon: LucideIcon; onClick?: () => void; disabled?: boolean }) {
   return (
-    <button className="inline-flex items-center gap-2 rounded-[8px] border border-white/[0.1] bg-white/[0.025] px-3 py-2 text-[12px] text-slate-300 transition hover:bg-white/[0.045]">
+    <button type="button" onClick={onClick} disabled={disabled} className="inline-flex items-center gap-2 rounded-[8px] border border-white/[0.1] bg-white/[0.025] px-3 py-2 text-[12px] text-slate-300 transition hover:bg-white/[0.045] disabled:cursor-not-allowed disabled:opacity-60">
       <Icon className="h-3.5 w-3.5" />
       {label}
     </button>
   );
 }
 
-export function SearchField({ placeholder }: { placeholder: string }) {
+export function SearchField({ placeholder, value = "", onChange }: { placeholder: string; value?: string; onChange?: (value: string) => void }) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 text-sm text-slate-500">
       <Search className="h-4 w-4" />
-      <span>{placeholder}</span>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange?.(event.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none"
+      />
     </div>
   );
 }
@@ -334,14 +343,37 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
 }
 
 const txTickerItems = [
-  `DEAL-7F3A · $42,000 ${settlementTokenSymbol} Secured · GlobalImport SG ↔ Shenzhen Parts CN`,
-  "DEAL-4B2C · Proof Verified on Arbitrum · Dubai Corp UAE ↔ Ningbo Factory CN",
-  `DEAL-9A3F · $78,500 ${settlementTokenSymbol} Released · Quality GmbH DE ↔ Cairo Trade EG`,
-  `New Deal · $125,000 ${settlementTokenSymbol} Initiated · Singapore Trade ↔ Frankfurt Logistics DE`,
-  "DEAL-2D1B · Audit Complete · All milestones verified on Arbitrum Sepolia",
-  `DEAL-5C7D · $33,250 ${settlementTokenSymbol} Funded · Seoul Electronics KR ↔ Amsterdam BV NL`,
-  `DEAL-8E2A · $61,800 ${settlementTokenSymbol} · Proof submitted · Lagos Imports NG ↔ Mumbai Trade IN`,
+  `LIVE MODE · Waiting for market activity on ${settlementTokenSymbol}`,
+  "MANAGED WALLETS · Custodial engine is ready for new flows",
+  "ARBITRUM SEPOLIA · Explorer links and proofs update in real time",
 ];
+
+function formatRelativeTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Live";
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(Math.floor(diffMs / 60_000), 0);
+
+  if (diffMinutes < 1) {
+    return "Just now";
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  }
+
+  return `${Math.floor(diffHours / 24)}d ago`;
+}
 
 function formatTickerItem(item: CustodyActivityItem) {
   const timestamp = new Date(item.createdAt);
@@ -383,11 +415,39 @@ export function TxTicker({ items }: { items?: CustodyActivityItem[] }) {
 }
 
 function NotificationDropdown({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const notifications = [
-    { id: 1, title: "Proof Verified", body: "DEAL-7F3A verified on Arbitrum Sepolia", time: "10m ago", color: "bg-emerald-400" },
-    { id: 2, title: "New Deal Created", body: withSettlementTokenSymbol("DEAL-9A3F initialized for $125,000 USDC"), time: "1h ago", color: "bg-blue-400" },
-    { id: 3, title: "Dispute Opened", body: "DEAL-3C5E quality issue raised", time: "2h ago", color: "bg-orange-400" },
-  ];
+  const { custodySnapshot, data } = useTradeLockData();
+  const notifications =
+    custodySnapshot?.recentActivity.slice(0, 6).map((item) => ({
+      id: item.id,
+      title:
+        item.type === "daily-user"
+          ? "New User Joined"
+          : item.type === "dispute"
+            ? "Dispute Opened"
+            : item.type === "activity"
+              ? "Deal Lifecycle Completed"
+              : "System Update",
+      body: item.summary,
+      time: formatRelativeTime(item.createdAt),
+      color:
+        item.type === "dispute"
+          ? "bg-orange-400"
+          : item.type === "daily-user"
+            ? "bg-blue-400"
+            : "bg-emerald-400",
+    })) ??
+    data.auditEvents.slice(0, 6).map((event) => ({
+      id: event.id,
+      title: event.type,
+      body: `${event.dealId} · ${event.actor}`,
+      time: formatRelativeTime(event.timestamp),
+      color:
+        event.status === "Finalized" || event.status === "Verified"
+          ? "bg-emerald-400"
+          : event.status === "Under Review"
+            ? "bg-orange-400"
+            : "bg-blue-400",
+    }));
   return (
     <AnimatePresence>
       {open && (
@@ -435,6 +495,7 @@ export function TopBar({
   onConnectWallet,
   onDisconnectWallet,
   onSwitchWalletNetwork,
+  onOpenCreateDeal,
 }: {
   onOpenSearch?: () => void;
   walletState: WalletState;
@@ -442,8 +503,11 @@ export function TopBar({
   onConnectWallet: () => void;
   onDisconnectWallet: () => void;
   onSwitchWalletNetwork: () => void;
+  onOpenCreateDeal?: () => void;
 }) {
   const [bellOpen, setBellOpen] = useState(false);
+  const { custodySnapshot } = useTradeLockData();
+  const notificationCount = custodySnapshot?.recentActivity.length ?? 0;
   return (
     <div className="flex items-center justify-between gap-4 border-b border-white/[0.07] bg-white/[0.01] px-4 py-3 backdrop-blur-sm">
       <div className="flex flex-1 items-center gap-3">
@@ -466,7 +530,7 @@ export function TopBar({
         <div className="relative">
           <button onClick={() => setBellOpen((v) => !v)} className="relative p-2 text-slate-300 transition hover:text-white">
             <Bell className="h-4.5 w-4.5" />
-            <span className="absolute right-1 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[9px] font-semibold text-white">3</span>
+            <span className="absolute right-1 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[9px] font-semibold text-white">{Math.min(notificationCount, 9)}</span>
           </button>
           <NotificationDropdown open={bellOpen} onClose={() => setBellOpen(false)} />
         </div>
@@ -482,7 +546,7 @@ export function TopBar({
         ) : (
           <ActionButton tone="slate" label="Disconnect" icon={Wallet} small onClick={onDisconnectWallet} />
         )}
-        <ActionButton tone="blue" label="Create Deal" icon={Plus} small />
+        <ActionButton tone="blue" label="Create Deal" icon={Plus} small onClick={onOpenCreateDeal} />
       </div>
     </div>
   );
@@ -630,6 +694,7 @@ export function DealSummaryCard({
   uploadDisabled = false,
   releaseDisabled = false,
   disputeDisabled = false,
+  onViewTransaction,
 }: {
   deal: {
     id: string;
@@ -645,6 +710,7 @@ export function DealSummaryCard({
     txHash: string;
     network: string;
     proofHash: string;
+    proofStatus: string;
     status: StatusKey;
   };
   className?: string;
@@ -663,8 +729,10 @@ export function DealSummaryCard({
   uploadDisabled?: boolean;
   releaseDisabled?: boolean;
   disputeDisabled?: boolean;
+  onViewTransaction?: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const txUrl = getTxExplorerUrl(deal.txHash);
 
   return (
     <Panel
@@ -721,13 +789,24 @@ export function DealSummaryCard({
         <div className="space-y-3">
           <SummaryRow label="Proof File" value={deal.proofFile} />
           <SummaryRow label="Proof Hash" value={deal.proofHash} />
-          <SummaryRow label="Proof Verification" value="Proof Verified" />
+          <SummaryRow label="Proof Verification" value={deal.status === "Completed" || deal.proofStatus === "Proof Verified" ? "Verified" : deal.proofStatus} />
           <SummaryRow label="Last Update" value={deal.updated} />
-          <SummaryRow label="TX Hash" value={deal.txHash} />
+          <SummaryRow
+            label="TX Hash"
+            value={
+              txUrl ? (
+                <a href={txUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                  {shortenHash(deal.txHash)}
+                </a>
+              ) : (
+                deal.txHash
+              )
+            }
+          />
         </div>
 
         <div className="grid gap-2 pt-1">
-          <ActionButton tone="blue" label="View Deal" icon={ExternalLink} small />
+          <ActionButton tone="blue" label="View Deal" icon={ExternalLink} small onClick={onViewTransaction ?? (() => txUrl && window.open(txUrl, "_blank", "noopener,noreferrer"))} disabled={!txUrl && !onViewTransaction} />
           <ActionButton
             tone="purple"
             label={approvePending ? "Approving Token..." : "Approve Token"}
@@ -927,16 +1006,27 @@ export function MobileTopBar({
   isWalletBusy,
   onConnectWallet,
   onSwitchWalletNetwork,
+  onOpenCreateDeal,
 }: {
   walletState: WalletState;
   isWalletBusy: boolean;
   onConnectWallet: () => void;
   onSwitchWalletNetwork: () => void;
+  onOpenCreateDeal?: () => void;
 }) {
+  const { custodySnapshot } = useTradeLockData();
+  const notificationCount = custodySnapshot?.recentActivity.length ?? 0;
   return (
     <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] bg-white/[0.01] px-4 py-3.5 backdrop-blur-sm">
       <BrandMark compact />
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onOpenCreateDeal}
+          className="rounded-xl border border-blue-400/30 bg-blue-500/10 px-3 py-2 text-[10px] font-semibold text-blue-200"
+        >
+          Create
+        </button>
         {!walletState.isConnected ? (
           <button
             type="button"
@@ -966,7 +1056,7 @@ export function MobileTopBar({
         </div>
         <button type="button" aria-label="Notifications" className="relative rounded-xl border border-white/10 bg-white/[0.03] p-2 text-slate-300">
           <Bell className="h-4 w-4" />
-          <span className="absolute right-1 top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-blue-500 px-1 text-[8px] font-semibold text-white">3</span>
+          <span className="absolute right-1 top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-blue-500 px-1 text-[8px] font-semibold text-white">{Math.min(notificationCount, 9)}</span>
         </button>
       </div>
     </div>

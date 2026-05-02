@@ -17,6 +17,7 @@ import {
   SummaryRow,
   ToolbarButton,
 } from "@/components/tradelock-ui";
+import { getTxExplorerUrl, shortenHash } from "@/lib/explorer";
 
 export function DisputesDesktopScreen({
   selectedDispute,
@@ -27,6 +28,7 @@ export function DisputesDesktopScreen({
 }) {
   const { data } = useTradeLockData();
   const { disputeFilters, disputes, disputesStats } = data;
+  const txUrl = getTxExplorerUrl(selectedDispute.txHash);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -100,12 +102,23 @@ export function DisputesDesktopScreen({
           <div className="space-y-3">
             <SummaryRow label="Evidence Status" value={selectedDispute.evidenceStatus} />
             <SummaryRow label="Evidence Files" value={`${selectedDispute.evidenceFiles.length} files`} />
-            <SummaryRow label="TX Hash" value={selectedDispute.txHash} />
+            <SummaryRow
+              label="TX Hash"
+              value={
+                txUrl ? (
+                  <a href={txUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                    {shortenHash(selectedDispute.txHash)}
+                  </a>
+                ) : (
+                  selectedDispute.txHash
+                )
+              }
+            />
             <SummaryRow label="Last Update" value={selectedDispute.updated} />
           </div>
           <div className="grid gap-3">
-            <ActionButton tone="green" label="Resolve & Release" icon={ShieldCheck} />
-            <ActionButton tone="orange" label="Escalate to Arbitration" icon={ShieldAlert} outlined />
+            <ActionButton tone="green" label="Resolve & Release" icon={ShieldCheck} disabled />
+            <ActionButton tone="orange" label="Escalate to Arbitration" icon={ShieldAlert} outlined onClick={() => txUrl && window.open(txUrl, "_blank", "noopener,noreferrer")} disabled={!txUrl} />
           </div>
         </div>
       </Panel>

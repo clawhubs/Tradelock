@@ -6,7 +6,9 @@ import { arbitrumSepolia } from "viem/chains";
 
 import { appEnv, hasCustodyConfig } from "@/lib/env";
 import { getRedisClient } from "@/lib/services/redis";
+import { replaceSupabaseState } from "@/lib/services/tradelock-supabase-store";
 import { settlementTokenSymbol } from "@/lib/settlement-token";
+import { createDefaultSettingsState, type PersistedState } from "@/lib/tradelock-default-state";
 import {
   createAuditEvent,
   createDeal as createBackendDeal,
@@ -15,7 +17,7 @@ import {
   updateSettings,
   upsertCounterparties,
 } from "@/lib/tradelock-backend";
-import type { Counterparty } from "@/lib/types";
+import type { Counterparty, SettingsState, SummaryItem } from "@/lib/types";
 
 type ManagedRole = "Buyer" | "Seller" | "Arbitrator";
 type WalletSource = "imported" | "generated";
@@ -531,7 +533,14 @@ async function ensureTusdPoolReserve(registry: CustodialRegistry) {
   return [hash];
 }
 
-async function topUpWallet(registry: CustodialRegistry, wallet: CustodialWalletRecord) {
+async function topUpWallet(
+  registry: CustodialRegistry,
+  wallet: CustodialWalletRecord,
+  options: {
+    requiredEthTarget?: number;
+    requiredTusdTarget?: number;
+  } = {},
+) {
   const txHashes: Hex[] = [];
   const publicClient = createPublicArbitrumClient();
   const poolWalletClient = createPoolWalletClient();
@@ -540,9 +549,9 @@ async function topUpWallet(registry: CustodialRegistry, wallet: CustodialWalletR
 
   const currentEth = parseDecimal(balances.eth);
   const currentTusd = parseDecimal(balances.tusd);
-  const ethTarget = parseDecimal(wallet.funding.ethTarget);
+  const ethTarget = Math.max(parseDecimal(wallet.funding.ethTarget), options.requiredEthTarget ?? 0);
   const ethThreshold = parseDecimal(wallet.funding.ethThreshold);
-  const tusdTarget = parseDecimal(wallet.funding.tusdTarget);
+  const tusdTarget = Math.max(parseDecimal(wallet.funding.tusdTarget), options.requiredTusdTarget ?? 0);
   const tusdThreshold = parseDecimal(wallet.funding.tusdThreshold);
 
   if (currentEth < ethThreshold) {
@@ -560,7 +569,7 @@ async function topUpWallet(registry: CustodialRegistry, wallet: CustodialWalletR
     }
   }
 
-  if (wallet.role !== "Arbitrator" && currentTusd < tusdThreshold) {
+  if (wallet.role !== "Arbitrator" && (currentTusd < tusdThreshold || currentTusd < tusdTarget)) {
     const reserveHashes = await ensureTusdPoolReserve(registry);
     txHashes.push(...reserveHashes);
 
@@ -589,7 +598,13 @@ async function topUpWallet(registry: CustodialRegistry, wallet: CustodialWalletR
   return txHashes;
 }
 
-async function topUpManagedWallets(registry: CustodialRegistry, addresses?: Hex[]) {
+async function topUpManagedWallets(
+  registry: CustodialRegistry,
+  addresses?: Hex[],
+  options: {
+    perWallet?: Partial<Record<string, { requiredEthTarget?: number; requiredTusdTarget?: number }>>;
+  } = {},
+) {
   const tracked = addresses?.map((value) => value.toLowerCase());
   const txHashes: Hex[] = [];
 
@@ -598,7 +613,8 @@ async function topUpManagedWallets(registry: CustodialRegistry, addresses?: Hex[
       continue;
     }
 
-    const hashes = await topUpWallet(registry, wallet);
+    const walletOptions = options.perWallet?.[wallet.address.toLowerCase()];
+    const hashes = await topUpWallet(registry, wallet, walletOptions);
     txHashes.push(...hashes);
   }
 
@@ -663,8 +679,18 @@ function buildAutoProofHash(dealId: string) {
 }
 
 async function syncSettingsSummary(registry: CustodialRegistry) {
+  const settings = buildLiveSettingsState(registry);
+
+  await updateSettings({
+    workspaceSummary: settings.workspaceSummary,
+    securitySummary: settings.securitySummary,
+  });
+}
+
+function buildWorkspaceSummary(registry: CustodialRegistry): SummaryItem[] {
   const activeWalletCount = registry.wallets.filter((wallet) => wallet.active).length;
-  const workspaceSummary = [
+
+  return [
     { label: "Verified Business", value: "Verified" },
     { label: "Managed User Wallets", value: `${activeWalletCount}` },
     { label: "Custodial Pool", value: registry.pool.address.slice(0, 10) },
@@ -673,18 +699,36 @@ async function syncSettingsSummary(registry: CustodialRegistry) {
     { label: "Activity Cadence", value: `${registry.automation.activityIntervalSeconds}s` },
     { label: "Pool ETH Reserve", value: `${registry.pool.reserveEthTarget} ETH` },
   ];
+}
 
-  const securitySummary = [
+function buildSecuritySummary(registry: CustodialRegistry): SummaryItem[] {
+  return [
     { label: "Custody Model", value: "Server-managed" },
     { label: "Pool Signer", value: registry.pool.address.slice(0, 10) },
     { label: "Wallet Encryption", value: appEnv.custodyEncryptionKey ? "Enabled" : "Missing" },
     { label: "Automation Auth", value: appEnv.automationToken ? "Enabled" : "Open" },
   ];
+}
 
-  await updateSettings({
-    workspaceSummary,
-    securitySummary,
-  });
+function buildLiveSettingsState(registry: CustodialRegistry): SettingsState {
+  return {
+    ...createDefaultSettingsState(),
+    workspaceSummary: buildWorkspaceSummary(registry),
+    securitySummary: buildSecuritySummary(registry),
+  };
+}
+
+function buildLivePersistedState(registry: CustodialRegistry): PersistedState {
+  return {
+    deals: [],
+    disputes: [],
+    auditEvents: [],
+    counterparties: registry.wallets
+      .filter((wallet) => wallet.active)
+      .map(createCounterpartyRecord)
+      .filter((entry): entry is Counterparty => Boolean(entry)),
+    settings: buildLiveSettingsState(registry),
+  };
 }
 
 function ensureConfiguredAddresses() {
@@ -700,7 +744,7 @@ async function runDealLifecycle(
 ): Promise<DealLifecycleResult> {
   ensureConfiguredAddresses();
 
-  const amountOptions = [25000, 35000, 50000, 65000, 80000, 95000];
+  const amountOptions = [25000, 35000, 50000, 65000];
   const amount = amountOptions[Math.floor(Math.random() * amountOptions.length)] ?? 25000;
   const amountRaw = amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const amountUnits = parseUnits(String(amount), 6);
@@ -712,6 +756,25 @@ async function runDealLifecycle(
   const buyerClient = createWalletClientForRecord(buyer);
   const sellerClient = createWalletClientForRecord(seller);
   const txHashes: Hex[] = [];
+  txHashes.push(
+    ...(await topUpWallet(registry, buyer, {
+      requiredEthTarget: parseDecimal(buyer.funding.ethTarget),
+      requiredTusdTarget: amount + 5000,
+    })),
+  );
+  txHashes.push(
+    ...(await topUpWallet(registry, seller, {
+      requiredEthTarget: parseDecimal(seller.funding.ethTarget),
+    })),
+  );
+  let buyerNonce = await publicClient.getTransactionCount({
+    address: buyer.address,
+    blockTag: "pending",
+  });
+  let sellerNonce = await publicClient.getTransactionCount({
+    address: seller.address,
+    blockTag: "pending",
+  });
 
   const createHash = await buyerClient.writeContract({
     address: appEnv.escrowContractAddress as Hex,
@@ -720,6 +783,7 @@ async function runDealLifecycle(
     args: [dealId, seller.address, appEnv.settlementTokenAddress as Hex, amountUnits, metadataUri],
     account: buyerClient.account,
     chain: arbitrumSepolia,
+    nonce: buyerNonce++,
   });
   await publicClient.waitForTransactionReceipt({ hash: createHash });
   txHashes.push(createHash);
@@ -748,6 +812,7 @@ async function runDealLifecycle(
     args: [appEnv.escrowContractAddress as Hex, amountUnits],
     account: buyerClient.account,
     chain: arbitrumSepolia,
+    nonce: buyerNonce++,
   });
   await publicClient.waitForTransactionReceipt({ hash: approveHash });
   txHashes.push(approveHash);
@@ -759,6 +824,7 @@ async function runDealLifecycle(
     args: [dealId],
     account: buyerClient.account,
     chain: arbitrumSepolia,
+    nonce: buyerNonce++,
   });
   await publicClient.waitForTransactionReceipt({ hash: fundHash });
   txHashes.push(fundHash);
@@ -785,6 +851,7 @@ async function runDealLifecycle(
     args: [dealId, proofHash],
     account: sellerClient.account,
     chain: arbitrumSepolia,
+    nonce: sellerNonce++,
   });
   await publicClient.waitForTransactionReceipt({ hash: proofTxHash });
   txHashes.push(proofTxHash);
@@ -818,6 +885,7 @@ async function runDealLifecycle(
       args: [dealId, "Auto QA mismatch detected"],
       account: sellerClient.account,
       chain: arbitrumSepolia,
+      nonce: sellerNonce++,
     });
     await publicClient.waitForTransactionReceipt({ hash: disputeHash });
     txHashes.push(disputeHash);
@@ -859,6 +927,7 @@ async function runDealLifecycle(
     args: [dealId],
     account: buyerClient.account,
     chain: arbitrumSepolia,
+    nonce: buyerNonce++,
   });
   await publicClient.waitForTransactionReceipt({ hash: releaseHash });
   txHashes.push(releaseHash);
@@ -1108,6 +1177,24 @@ export async function runActivityCycle(options: { preferredBuyerAddress?: Hex } 
   return lifecycle;
 }
 
+export async function runActivityCycleByBuyerCompany(company: string) {
+  const registry = await readRegistry();
+
+  if (!registry) {
+    throw new Error("Custodial registry is not initialized.");
+  }
+
+  const buyer = registry.wallets.find(
+    (wallet) => wallet.role === "Buyer" && wallet.active && wallet.company === company,
+  );
+
+  if (!buyer) {
+    throw new Error(`Active buyer wallet not found for ${company}.`);
+  }
+
+  return runActivityCycle({ preferredBuyerAddress: buyer.address });
+}
+
 export async function runDailyUserCycle(date = new Date()) {
   const registry = await readRegistry();
 
@@ -1164,5 +1251,111 @@ export async function runDailyUserCycle(date = new Date()) {
       country: wallet.countryName,
     },
     lifecycle,
+  };
+}
+
+export async function rebuildLiveWorkspaceState() {
+  const registry = await readRegistry();
+
+  if (!registry) {
+    throw new Error("Custodial registry is not initialized.");
+  }
+
+  const liveState = buildLivePersistedState(registry);
+  const replaced = await replaceSupabaseState(liveState);
+
+  if (!replaced) {
+    throw new Error("Could not replace Supabase state with live custody data.");
+  }
+
+  await syncSettingsSummary(registry);
+  appendActivity(registry, {
+    type: "bootstrap",
+    summary: `Live workspace state rebuilt from ${liveState.counterparties.length} managed counterparties.`,
+    txHashes: [],
+  });
+  await writeRegistry(registry);
+
+  return {
+    counterparties: liveState.counterparties.length,
+    deals: liveState.deals.length,
+    disputes: liveState.disputes.length,
+    auditEvents: liveState.auditEvents.length,
+  };
+}
+
+function pickSellerForBuyer(sellers: CustodialWalletRecord[], buyer: CustodialWalletRecord, cursor: number) {
+  if (sellers.length === 0) {
+    return null;
+  }
+
+  for (let offset = 0; offset < sellers.length; offset += 1) {
+    const seller = sellers[(cursor + offset) % sellers.length];
+
+    if (seller && seller.countryCode !== buyer.countryCode) {
+      return seller;
+    }
+  }
+
+  return sellers[cursor % sellers.length] ?? null;
+}
+
+export async function runFanoutActivityCycle() {
+  const registry = await readRegistry();
+
+  if (!registry) {
+    throw new Error("Custodial registry is not initialized.");
+  }
+
+  const buyers = registry.wallets.filter((wallet) => wallet.role === "Buyer" && wallet.active);
+  const sellers = registry.wallets.filter((wallet) => wallet.role === "Seller" && wallet.active);
+
+  if (buyers.length === 0 || sellers.length === 0) {
+    throw new Error("Active buyer or seller wallets are missing.");
+  }
+
+  const createdDeals: string[] = [];
+  const disputeDeals: string[] = [];
+  const allTxHashes: string[] = [];
+
+  for (const [index, buyer] of buyers.entries()) {
+    const seller = pickSellerForBuyer(sellers, buyer, index);
+
+    if (!seller) {
+      continue;
+    }
+
+    const fundingHashes = await topUpManagedWallets(registry, [buyer.address, seller.address]);
+    const lifecycle = await runDealLifecycle(registry, buyer, seller);
+    buyer.lastActivityAt = nowIso();
+    seller.lastActivityAt = nowIso();
+    createdDeals.push(lifecycle.dealId);
+    allTxHashes.push(...fundingHashes, ...lifecycle.txHashes);
+
+    if (lifecycle.disputeOpened) {
+      disputeDeals.push(lifecycle.dealId);
+    }
+
+    appendActivity(registry, {
+      type: lifecycle.disputeOpened ? "dispute" : "activity",
+      summary: lifecycle.disputeOpened
+        ? `${buyer.company} opened a live dispute with ${seller.company}.`
+        : `${buyer.company} completed an automated purchase from ${seller.company}.`,
+      dealId: lifecycle.dealId,
+      txHashes: [...fundingHashes, ...lifecycle.txHashes],
+    });
+  }
+
+  await refreshRegistryBalances(registry, [...buyers.map((wallet) => wallet.address), ...sellers.map((wallet) => wallet.address)]);
+  await syncSettingsSummary(registry);
+  await writeRegistry(registry);
+
+  return {
+    buyersProcessed: buyers.length,
+    sellersAvailable: sellers.length,
+    dealsCreated: createdDeals.length,
+    disputesOpened: disputeDeals.length,
+    dealIds: createdDeals,
+    txHashes: allTxHashes,
   };
 }

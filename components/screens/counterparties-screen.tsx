@@ -17,6 +17,7 @@ import {
   SummaryRow,
   ToolbarButton,
 } from "@/components/tradelock-ui";
+import { getAddressExplorerUrl, shortenHash } from "@/lib/explorer";
 
 export function CounterpartiesDesktopScreen({
   selectedCounterparty,
@@ -27,6 +28,7 @@ export function CounterpartiesDesktopScreen({
 }) {
   const { data } = useTradeLockData();
   const { counterparties, counterpartyFilters, counterpartyStats } = data;
+  const walletUrl = getAddressExplorerUrl(selectedCounterparty.wallet);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -94,7 +96,18 @@ export function CounterpartiesDesktopScreen({
           </div>
           <div className="space-y-3">
             <SummaryRow label="Escrow Volume" value={selectedCounterparty.escrowVolume} emphasized />
-            <SummaryRow label="Wallet" value={selectedCounterparty.wallet} />
+            <SummaryRow
+              label="Wallet"
+              value={
+                walletUrl ? (
+                  <a href={walletUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                    {shortenHash(selectedCounterparty.wallet)}
+                  </a>
+                ) : (
+                  selectedCounterparty.wallet
+                )
+              }
+            />
             <SummaryRow label="Last Deal" value={selectedCounterparty.lastDeal} />
             <div className="space-y-2">
               <SummaryRow label="Trust Score" value={`${selectedCounterparty.trustScore}/100`} />
@@ -107,7 +120,7 @@ export function CounterpartiesDesktopScreen({
             </div>
           </div>
           <div className="grid gap-3">
-            <ActionButton tone="blue" label="View Profile" icon={ExternalLink} />
+            <ActionButton tone="blue" label="View Profile" icon={ExternalLink} onClick={() => walletUrl && window.open(walletUrl, "_blank", "noopener,noreferrer")} disabled={!walletUrl} />
           </div>
         </div>
       </Panel>

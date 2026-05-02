@@ -17,6 +17,7 @@ import {
   SummaryRow,
   ToolbarButton,
 } from "@/components/tradelock-ui";
+import { getIpfsGatewayUrl, getTxExplorerUrl, shortenHash } from "@/lib/explorer";
 
 export function AuditDesktopScreen({
   selectedEvent,
@@ -27,6 +28,8 @@ export function AuditDesktopScreen({
 }) {
   const { data } = useTradeLockData();
   const { auditEvents, auditFilters, auditStats } = data;
+  const txUrl = getTxExplorerUrl(selectedEvent.txHash);
+  const proofUrl = getIpfsGatewayUrl(selectedEvent.proofHash);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -92,14 +95,36 @@ export function AuditDesktopScreen({
             <SummaryRow label="Asset" value={selectedEvent.asset} />
           </div>
           <div className="space-y-3">
-            <SummaryRow label="TX Hash" value={selectedEvent.txHash} />
+            <SummaryRow
+              label="TX Hash"
+              value={
+                txUrl ? (
+                  <a href={txUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                    {shortenHash(selectedEvent.txHash)}
+                  </a>
+                ) : (
+                  selectedEvent.txHash
+                )
+              }
+            />
             <SummaryRow label="Block" value={selectedEvent.block} />
             <SummaryRow label="Proof File" value={selectedEvent.proofFile ?? "N/A"} />
-            <SummaryRow label="Proof Hash" value={selectedEvent.proofHash ?? "N/A"} />
+            <SummaryRow
+              label="Proof Hash"
+              value={
+                proofUrl ? (
+                  <a href={proofUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                    {shortenHash(selectedEvent.proofHash)}
+                  </a>
+                ) : (
+                  selectedEvent.proofHash ?? "N/A"
+                )
+              }
+            />
             <SummaryRow label="Timestamp" value={selectedEvent.timestamp} />
           </div>
           <div className="grid gap-3 pt-2">
-            <ActionButton tone="blue" label="View on Arbiscan" icon={ExternalLink} />
+            <ActionButton tone="blue" label="View on Arbiscan" icon={ExternalLink} onClick={() => txUrl && window.open(txUrl, "_blank", "noopener,noreferrer")} disabled={!txUrl} />
           </div>
         </div>
       </Panel>

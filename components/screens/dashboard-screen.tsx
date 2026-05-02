@@ -26,6 +26,7 @@ import {
 } from "@/components/tradelock-ui";
 import { useToast } from "@/components/toast-provider";
 import { settlementTokenSymbol } from "@/lib/settlement-token";
+import { getTxExplorerUrl, shortenHash } from "@/lib/explorer";
 
 function flagFor(name: string) {
   if (name.includes("GlobalImport")) return "🇸🇬";
@@ -50,11 +51,11 @@ function compactUsd(value: number): string {
 }
 
 function compactTimestamp(value: string) {
-  return value.replace(", 2025 ", ", ").replace(" AM", "").replace(" PM", "");
+  return value.replace(/, (\d{4}) /, ", ").replace(" AM", "").replace(" PM", "");
 }
 
 function fullTimestamp(value: string) {
-  return value.replace(", 2025 ", ", 2025 • ");
+  return value.replace(/, (\d{4}) /, ", $1 • ");
 }
 
 function eventTone(event: AuditEvent) {
@@ -162,11 +163,12 @@ export function DashboardDesktopScreen({
   selectedDeal: Deal;
   onSelectDeal: (id: string) => void;
 }) {
-  const { data, custodySnapshot } = useTradeLockData();
+  const { data, custodySnapshot, releaseFundsForDeal, openDisputeForDeal, walletState } = useTradeLockData();
   const { toast } = useToast();
   const { deals, disputes, overviewStats, auditEvents } = data;
   const overviewRows = deals.slice(0, 4);
   const selectedDispute = disputes.find((dispute) => dispute.dealId === selectedDeal.id);
+  const selectedDealTxUrl = getTxExplorerUrl(selectedDeal.txHash);
   const activityRows =
     custodySnapshot?.recentActivity?.slice(0, 4).map((event) => [
       event.type === "daily-user" ? "New User Joined" : event.type === "dispute" ? "Live Dispute" : "Live Activity",
@@ -405,10 +407,14 @@ export function DashboardDesktopScreen({
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-400">TX Hash</div>
-                    <div className="mt-1 flex items-center gap-1.5 text-blue-300">
-                      <span>{selectedDeal.txHash}</span>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </div>
+                    {selectedDealTxUrl ? (
+                      <a href={selectedDealTxUrl} target="_blank" rel="noreferrer" className="mt-1 flex items-center gap-1.5 text-blue-300 hover:text-blue-200">
+                        <span>{shortenHash(selectedDeal.txHash)}</span>
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    ) : (
+                      <div className="mt-1 text-slate-400">{selectedDeal.txHash}</div>
+                    )}
                   </div>
                   {selectedDispute && (
                     <div>
@@ -498,13 +504,8 @@ export function DashboardDesktopScreen({
               label="Release Funds"
               icon={Lock}
               small
-              onClick={() =>
-                toast({
-                  type: "success",
-                  title: "Funds Released",
-                  description: `${selectedDeal.amount} sent to ${selectedDeal.seller} on Arbitrum.`,
-                })
-              }
+              onClick={() => void releaseFundsForDeal(selectedDeal)}
+              disabled={!walletState.isConnected || !walletState.isCorrectNetwork || !walletState.contractReady}
             />
             <ActionButton
               tone="orange"
@@ -512,13 +513,8 @@ export function DashboardDesktopScreen({
               icon={ShieldAlert}
               outlined
               small
-              onClick={() =>
-                toast({
-                  type: "warning",
-                  title: "Dispute Initiated",
-                  description: `Case opened for ${selectedDeal.id}. Counterparty has been notified.`,
-                })
-              }
+              onClick={() => void openDisputeForDeal(selectedDeal)}
+              disabled={!walletState.isConnected || !walletState.isCorrectNetwork || !walletState.contractReady}
             />
           </div>
         </div>
@@ -562,10 +558,11 @@ export function DashboardMobileScreen({
 }: {
   selectedDeal: Deal;
 }) {
-  const { data, custodySnapshot } = useTradeLockData();
+  const { data, custodySnapshot, releaseFundsForDeal, openDisputeForDeal, walletState } = useTradeLockData();
   const { toast } = useToast();
   const { deals, disputes, auditEvents } = data;
   const recentDeals = deals.slice(0, 4);
+  const selectedDealTxUrl = getTxExplorerUrl(selectedDeal.txHash);
   const activityRows =
     custodySnapshot?.recentActivity?.slice(0, 4).map((event) => [
       event.type === "daily-user" ? "New User Joined" : event.type === "dispute" ? "Live Dispute" : "Live Activity",
@@ -620,8 +617,6 @@ export function DashboardMobileScreen({
     { icon: ShieldAlert, label: "Dispute", color: "from-orange-500 to-orange-600", glow: "rgba(249,115,22,0.4)" },
   ];
 
-  // NOTE: sparkline arrays + change deltas are placeholder visualizations.
-  // In production these will come from backend time-series queries (Supabase / on-chain indexer).
   const statHighlights = [
     {
       label: "Active Deals",
@@ -856,10 +851,14 @@ export function DashboardMobileScreen({
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-slate-400">TX Hash</span>
-            <span className="flex items-center gap-1.5 font-mono text-blue-300">
-              {selectedDeal.txHash}
-              <ExternalLink className="h-3 w-3" />
-            </span>
+            {selectedDealTxUrl ? (
+              <a href={selectedDealTxUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 font-mono text-blue-300 hover:text-blue-200">
+                {shortenHash(selectedDeal.txHash)}
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            ) : (
+              <span className="text-slate-400">{selectedDeal.txHash}</span>
+            )}
           </div>
         </div>
 
@@ -869,13 +868,8 @@ export function DashboardMobileScreen({
             label="Release"
             icon={Lock}
             small
-            onClick={() =>
-              toast({
-                type: "success",
-                title: "Funds Released",
-                description: `${selectedDeal.amount} sent to ${selectedDeal.seller}.`,
-              })
-            }
+            onClick={() => void releaseFundsForDeal(selectedDeal)}
+            disabled={!walletState.isConnected || !walletState.isCorrectNetwork || !walletState.contractReady}
           />
           <ActionButton
             tone="orange"
@@ -883,13 +877,8 @@ export function DashboardMobileScreen({
             icon={ShieldAlert}
             outlined
             small
-            onClick={() =>
-              toast({
-                type: "warning",
-                title: "Dispute Initiated",
-                description: `Case opened for ${selectedDeal.id}.`,
-              })
-            }
+            onClick={() => void openDisputeForDeal(selectedDeal)}
+            disabled={!walletState.isConnected || !walletState.isCorrectNetwork || !walletState.contractReady}
           />
         </div>
       </motion.div>

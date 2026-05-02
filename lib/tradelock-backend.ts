@@ -1,7 +1,6 @@
 import {
   auditFilters,
   counterpartyFilters,
-  createFields,
   createSteps,
   dealFilters,
   disputeFilters,
@@ -70,6 +69,30 @@ function formatTimestamp(date = new Date()) {
 function formatAmount(amountRaw: string) {
   const value = Number(amountRaw.replace(/,/g, ""));
   return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${settlementTokenSymbol}`;
+}
+
+function buildCounterpartyEmail(label: string) {
+  const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  return `${slug.slice(0, 18)}@tradelock.demo`;
+}
+
+function buildCreateFields(counterparties: Counterparty[], deals: Deal[]) {
+  const recentDeal = deals[0];
+  const buyers = counterparties.filter((entry) => entry.role === "Buyer");
+  const sellers = counterparties.filter((entry) => entry.role === "Seller");
+  const buyer = buyers.find((entry) => entry.company === recentDeal?.buyer) ?? buyers[0];
+  const seller = sellers.find((entry) => entry.company === recentDeal?.seller) ?? sellers[0];
+
+  return [
+    { label: "Buyer Company", value: buyer?.company ?? "No active buyer yet" },
+    { label: "Buyer Country", value: buyer?.location ?? "Not available" },
+    { label: "Buyer Wallet", value: buyer?.wallet ?? "Not assigned" },
+    { label: "Buyer Handle", value: buyer?.handle ?? buildCounterpartyEmail("buyer") },
+    { label: "Seller Company", value: seller?.company ?? "No active seller yet" },
+    { label: "Seller Country", value: seller?.location ?? "Not available" },
+    { label: "Seller Wallet", value: seller?.wallet ?? "Not assigned" },
+    { label: "Seller Handle", value: seller?.handle ?? buildCounterpartyEmail("seller") },
+  ];
 }
 
 function normalizePersistedState(state: PersistedState): PersistedState {
@@ -307,10 +330,6 @@ function randomHex(length: number) {
   return Array.from({ length }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
 }
 
-function buildTxHash() {
-  return `0x${randomHex(64)}`;
-}
-
 function nextDealId(existingDeals: Deal[]): string {
   const suffix = randomHex(4).toUpperCase();
   const candidate = `DEAL-${suffix}`;
@@ -353,7 +372,7 @@ export async function getAppState(): Promise<TradeLockAppState> {
     auditStats: buildAuditStats(state.auditEvents),
     counterpartyStats: buildCounterpartyStats(counterparties),
     createSteps,
-    createFields,
+    createFields: buildCreateFields(counterparties, state.deals),
     settings: state.settings,
   };
 
@@ -375,27 +394,32 @@ export async function getDeal(id: string) {
 export async function createDeal(input: DealInput = {}) {
   const state = await readState();
   const id = input.id ?? nextDealId(state.deals);
-  const amountRaw = input.amountRaw ?? "5,000.00";
+  const buyers = state.counterparties.filter((entry) => entry.role === "Buyer");
+  const sellers = state.counterparties.filter((entry) => entry.role === "Seller");
+  const selectedBuyer = buyers[0];
+  const selectedSeller =
+    sellers.find((entry) => entry.location !== selectedBuyer?.location) ?? sellers[0];
+  const amountRaw = input.amountRaw ?? "25,000.00";
   const timestamp = formatTimestamp();
-  const txHash = input.txHash ?? buildTxHash();
+  const txHash = input.txHash ?? "";
 
   const newDeal: Deal = {
     id,
-    buyer: input.buyer ?? "GlobalImport Ltd.",
-    buyerLocation: input.buyerLocation ?? "Singapore",
-    seller: input.seller ?? "Shenzhen Parts Co.",
-    sellerLocation: input.sellerLocation ?? "China",
+    buyer: input.buyer ?? selectedBuyer?.company ?? "Unassigned Buyer",
+    buyerLocation: input.buyerLocation ?? selectedBuyer?.location ?? "Unknown",
+    seller: input.seller ?? selectedSeller?.company ?? "Unassigned Seller",
+    sellerLocation: input.sellerLocation ?? selectedSeller?.location ?? "Unknown",
     amount: formatAmount(amountRaw),
     amountRaw,
-    milestone: input.milestone ?? "Counterparty review in progress",
+    milestone: input.milestone ?? "Awaiting token approval",
     progress: input.progress ?? "0/3",
     proofStatus: input.proofStatus ?? "Waiting Proof",
     status: input.status ?? "Active",
     network: input.network ?? "Arbitrum Sepolia",
     updated: timestamp,
-    proofFile: input.proofFile ?? "AwaitingUpload",
+    proofFile: input.proofFile ?? "Pending upload",
     txHash,
-    proofHash: input.proofHash ?? "Pending",
+    proofHash: input.proofHash ?? "",
   };
 
   const auditEvent: AuditEvent = {
@@ -405,10 +429,10 @@ export async function createDeal(input: DealInput = {}) {
     actor: newDeal.buyer,
     asset: newDeal.amount,
     status: "Confirmed",
-    block: `${24570000 + state.auditEvents.length + 1}`,
+    block: input.txHash ? `${24570000 + state.auditEvents.length + 1}` : "Pending",
     timestamp,
     txHash,
-    proofHash: "Pending",
+    proofHash: newDeal.proofHash,
     proofFile: newDeal.proofFile,
   };
 
@@ -462,7 +486,7 @@ export async function createDispute(input: Partial<Dispute>) {
     status: input.status ?? "Under Review",
     updated: timestamp,
     evidenceFiles: input.evidenceFiles ?? [],
-    txHash: input.txHash ?? buildTxHash(),
+    txHash: input.txHash ?? "",
   };
 
   state.disputes = [dispute, ...state.disputes];
@@ -486,9 +510,9 @@ export async function createAuditEvent(input: Partial<AuditEvent>) {
     actor: input.actor ?? "TradeLock Operator",
     asset: withSettlementTokenSymbol(input.asset ?? "0.00 tUSD"),
     status: input.status ?? "Confirmed",
-    block: input.block ?? `${24570000 + state.auditEvents.length + 1}`,
+    block: input.block ?? "Pending",
     timestamp,
-    txHash: input.txHash ?? buildTxHash(),
+    txHash: input.txHash ?? "",
     proofHash: input.proofHash,
     proofFile: input.proofFile,
   };

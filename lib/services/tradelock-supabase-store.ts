@@ -348,6 +348,37 @@ export async function writeSupabaseState(state: PersistedState) {
   }
 }
 
+export async function replaceSupabaseState(state: PersistedState) {
+  const client = getSupabaseAdminClient();
+
+  if (!client) {
+    return false;
+  }
+
+  const health = await getSupabaseStoreHealth();
+
+  if (!health.available) {
+    return false;
+  }
+
+  try {
+    const clearResults = await Promise.all([
+      client.from("audit_events").delete().not("id", "is", null),
+      client.from("disputes").delete().not("id", "is", null),
+      client.from("deals").delete().not("id", "is", null),
+      client.from("counterparties").delete().not("company", "is", null),
+    ]);
+
+    if (clearResults.some((result) => result.error)) {
+      return false;
+    }
+
+    return await writeSupabaseState(state);
+  } catch {
+    return false;
+  }
+}
+
 export async function ensureSupabaseInitialized(defaultState: PersistedState) {
   const existing = await readSupabaseState();
 

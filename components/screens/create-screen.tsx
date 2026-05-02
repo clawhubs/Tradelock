@@ -9,13 +9,18 @@ import { settlementTokenSymbol } from "@/lib/settlement-token";
 export function CreateDesktopScreen({ onCreated }: { onCreated?: (dealId: string) => void }) {
   const { data, createDemoDeal, isSyncing, walletState } = useTradeLockData();
   const { createFields, createSteps } = data;
+  const buyerCompany = createFields.find((field) => field.label === "Buyer Company")?.value ?? "Active buyer pending";
+  const sellerCompany = createFields.find((field) => field.label === "Seller Company")?.value ?? "Active seller pending";
+  const referenceAmount = data.deals[0]?.amountRaw ?? "25,000.00";
+  const proofFileCount = new Set(data.auditEvents.filter((event) => event.proofFile).map((event) => event.proofFile)).size;
+  const openDisputes = data.disputes.filter((dispute) => dispute.status !== "Resolved").length;
   const createSections = [
-    { title: "Deal Type", value: "Sale of Goods - Electronics", icon: FileBadge2 },
-    { title: "Amount & Asset", value: `5,000 ${walletState.settlementSymbol} on Arbitrum Sepolia`, icon: HandCoins },
-    { title: "Milestones", value: "3 milestones • 30% / 40% / 30%", icon: TimerReset },
-    { title: "Proof Requirements", value: "Invoice, Packing List, Bill of Lading", icon: FileCheck2 },
-    { title: "Dispute Rule", value: "Escalation + Arbitration (7 days)", icon: ShieldAlert },
-    { title: "Review & Create", value: "Review details before deploying", icon: CheckCircle2 },
+    { title: "Deal Type", value: "Cross-border purchase order", icon: FileBadge2 },
+    { title: "Amount & Asset", value: `${referenceAmount} ${walletState.settlementSymbol} on Arbitrum Sepolia`, icon: HandCoins },
+    { title: "Milestones", value: "3 live settlement stages • approve / fund / release", icon: TimerReset },
+    { title: "Proof Requirements", value: `${Math.max(proofFileCount, 1)} proof artifact(s) already used in live deals`, icon: FileCheck2 },
+    { title: "Dispute Rule", value: `${openDisputes} open dispute(s) currently tracked`, icon: ShieldAlert },
+    { title: "Review & Create", value: `${buyerCompany} ↔ ${sellerCompany}`, icon: CheckCircle2 },
   ];
 
   async function handleCreate() {
@@ -86,21 +91,21 @@ export function CreateDesktopScreen({ onCreated }: { onCreated?: (dealId: string
             <SummaryRow label="Settlement Asset" value={walletState.settlementSymbol} />
             <SummaryRow label="Network" value="Arbitrum Sepolia" />
             <SummaryRow label="Milestones" value="3 stages" />
-            <SummaryRow label="Platform Fee (0.35%)" value={`17.50 ${walletState.settlementSymbol}`} />
-            <SummaryRow label="Escrow Network Fee" value={`5.20 ${walletState.settlementSymbol}`} />
-            <SummaryRow label="Total Fee" value={`22.70 ${walletState.settlementSymbol}`} emphasized />
+            <SummaryRow label="Reference Amount" value={`${referenceAmount} ${walletState.settlementSymbol}`} />
+            <SummaryRow label="Current Buyer" value={buyerCompany} />
+            <SummaryRow label="Current Seller" value={sellerCompany} emphasized />
           </div>
         </Panel>
         <Panel title="Deployment Readiness">
           <div className="space-y-3 text-sm">
             <SummaryRow label="Buyer Verified" value="Yes" />
             <SummaryRow label="Seller Verified" value="Yes" />
-            <SummaryRow label="Dispute Rule" value="Configured" />
+            <SummaryRow label="Dispute Rule" value={openDisputes > 0 ? "Live dispute history available" : "No open disputes"} />
           </div>
         </Panel>
         <Panel title="Launch Checklist">
           <div className="space-y-3 text-sm">
-            <SummaryRow label="Docs Attached" value="3 files" />
+            <SummaryRow label="Proof References" value={`${Math.max(proofFileCount, 1)} live file reference(s)`} />
             <SummaryRow label="Funding Wallet" value={walletState.isConnected ? walletState.shortAddress : "Not connected"} />
             <SummaryRow label="Escrow Contract" value={walletState.contractReady ? "Configured" : "Pending"} />
           </div>
@@ -114,6 +119,9 @@ export function CreateDesktopScreen({ onCreated }: { onCreated?: (dealId: string
 export function CreateMobileScreen({ onCreated }: { onCreated?: (dealId: string) => void }) {
   const { data, createDemoDeal, isSyncing } = useTradeLockData();
   const { createSteps } = data;
+  const buyerCompany = data.createFields.find((field) => field.label === "Buyer Company")?.value ?? "Active buyer pending";
+  const sellerCompany = data.createFields.find((field) => field.label === "Seller Company")?.value ?? "Active seller pending";
+  const referenceAmount = data.deals[0]?.amountRaw ?? "25,000.00";
 
   async function handleCreate() {
     const deal = await createDemoDeal();
@@ -145,9 +153,9 @@ export function CreateMobileScreen({ onCreated }: { onCreated?: (dealId: string)
       </div>
         <Panel title="Review & Create">
         <div className="space-y-3 text-sm">
-          <SummaryRow label="Buyer" value={data.createFields[0]?.value ?? "Configured Buyer"} />
-          <SummaryRow label="Seller" value={data.createFields[4]?.value ?? "Configured Seller"} />
-          <SummaryRow label="Amount" value={`5,000 ${settlementTokenSymbol}`} />
+          <SummaryRow label="Buyer" value={buyerCompany} />
+          <SummaryRow label="Seller" value={sellerCompany} />
+          <SummaryRow label="Amount" value={`${referenceAmount} ${settlementTokenSymbol}`} />
         </div>
       </Panel>
       <ActionButton tone="blue" label={isSyncing ? "Creating..." : "Create Escrow Deal"} icon={CheckCircle2} onClick={handleCreate} />

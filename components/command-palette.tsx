@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { withSettlementTokenSymbol } from "@/lib/settlement-token";
+import { useTradeLockData } from "@/components/tradelock-data-provider";
 import type { ScreenKey } from "@/lib/types";
 
 type CommandItem = {
@@ -26,7 +26,7 @@ type CommandItem = {
   category: "Navigation" | "Actions" | "Recent Deals";
 };
 
-const commands: CommandItem[] = [
+const baseCommands: CommandItem[] = [
   { label: "Dashboard", description: "Global escrow overview", icon: LayoutGrid, screen: "dashboard", category: "Navigation" },
   { label: "Deals", description: "Manage all escrow agreements", icon: FileBadge2, screen: "deals", category: "Navigation" },
   { label: "Disputes", description: "Resolve escrow conflicts", icon: ShieldAlert, screen: "disputes", category: "Navigation" },
@@ -34,9 +34,6 @@ const commands: CommandItem[] = [
   { label: "Counterparties", description: "Manage trusted partners", icon: Users2, screen: "counterparties", category: "Navigation" },
   { label: "Settings", description: "Configure your workspace", icon: Settings2, screen: "settings", category: "Navigation" },
   { label: "Create New Deal", description: "Set up a new escrow agreement", icon: Plus, screen: "create", category: "Actions" },
-  { label: "DEAL-7F3A", description: withSettlementTokenSymbol("GlobalImport ↔ Shenzhen Parts · $42,000 USDC"), icon: FileBadge2, screen: "deals", category: "Recent Deals" },
-  { label: "DEAL-4B2C", description: withSettlementTokenSymbol("Dubai Corp ↔ Ningbo Factory · $78,500 USDC"), icon: FileBadge2, screen: "deals", category: "Recent Deals" },
-  { label: "DEAL-9A3F", description: withSettlementTokenSymbol("Quality GmbH ↔ Cairo Trade · $33,250 USDC"), icon: FileBadge2, screen: "deals", category: "Recent Deals" },
 ];
 
 export function CommandPalette({
@@ -49,6 +46,15 @@ export function CommandPalette({
   onNavigate: (screen: ScreenKey) => void;
 }) {
   const [query, setQuery] = useState("");
+  const { data } = useTradeLockData();
+  const recentDeals = data.deals.slice(0, 6).map((deal) => ({
+    label: deal.id,
+    description: `${deal.buyer} ↔ ${deal.seller} · $${deal.amountRaw} ${deal.amount.split(" ").at(-1) ?? ""}`.trim(),
+    icon: FileBadge2,
+    screen: "deals" as ScreenKey,
+    category: "Recent Deals" as const,
+  }));
+  const commands = [...baseCommands, ...recentDeals];
 
   useEffect(() => {
     if (!open) setQuery("");

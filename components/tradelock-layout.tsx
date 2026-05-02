@@ -19,6 +19,7 @@ export function DesktopLayout({
   children,
   onOpenSearch,
   tickerItems,
+  onOpenCreateDeal,
 }: {
   activeScreen: ScreenKey;
   setActiveScreen: (screen: ScreenKey) => void;
@@ -30,6 +31,7 @@ export function DesktopLayout({
   children: ReactNode;
   onOpenSearch?: () => void;
   tickerItems?: CustodyActivityItem[];
+  onOpenCreateDeal?: () => void;
 }) {
   const isDashboard = activeScreen === "dashboard";
 
@@ -87,6 +89,7 @@ export function DesktopLayout({
               <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-violet-600/[0.028] blur-3xl" />
               <TopBar
                 onOpenSearch={onOpenSearch}
+                onOpenCreateDeal={onOpenCreateDeal}
                 walletState={walletState}
                 isWalletBusy={isWalletBusy}
                 onConnectWallet={onConnectWallet}
@@ -140,6 +143,7 @@ export function MobileLayout({
   onSwitchWalletNetwork,
   children,
   tickerItems,
+  onOpenCreateDeal,
 }: {
   activeScreen: ScreenKey;
   setActiveScreen: (screen: ScreenKey) => void;
@@ -152,6 +156,7 @@ export function MobileLayout({
   onSwitchWalletNetwork: () => void;
   children: ReactNode;
   tickerItems?: CustodyActivityItem[];
+  onOpenCreateDeal?: () => void;
 }) {
   return (
     <section className="xl:hidden">
@@ -175,6 +180,7 @@ export function MobileLayout({
             isWalletBusy={isWalletBusy}
             onConnectWallet={onConnectWallet}
             onSwitchWalletNetwork={onSwitchWalletNetwork}
+            onOpenCreateDeal={onOpenCreateDeal}
           />
           <TxTicker items={tickerItems} />
           <AnimatePresence mode="wait">

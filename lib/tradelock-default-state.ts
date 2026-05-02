@@ -1,10 +1,4 @@
-import {
-  auditEvents as initialAuditEvents,
-  counterparties as initialCounterparties,
-  settingsCards,
-  deals as initialDeals,
-  disputes as initialDisputes,
-} from "@/lib/mock-data";
+import { settingsCards } from "@/lib/mock-data";
 import type { AuditEvent, Counterparty, Deal, Dispute, SettingsState, SummaryItem } from "@/lib/types";
 
 export type PersistedState = {
@@ -18,34 +12,38 @@ export type PersistedState = {
 function createWorkspaceSummary(): SummaryItem[] {
   return [
     { label: "Verified Business", value: "Verified" },
-    { label: "Active Team Members", value: "12" },
-    { label: "2FA Enabled", value: "Yes" },
-    { label: "API Connected", value: "Yes" },
+    { label: "Managed User Wallets", value: "0" },
+    { label: "Custodial Pool", value: "Not initialized" },
     { label: "Default Network", value: "Arbitrum Sepolia" },
-    { label: "Notification Mode", value: "Daily Digest" },
-    { label: "Workspace ID", value: "TLK-GIL-882312" },
+    { label: "Daily User Start", value: "Not scheduled" },
+    { label: "Activity Cadence", value: "300s" },
+    { label: "Pool ETH Reserve", value: "2 ETH" },
   ];
 }
 
 function createSecuritySummary(): SummaryItem[] {
   return [
-    { label: "Access Reviews", value: "Current" },
-    { label: "Login Alerts", value: "Enabled" },
-    { label: "Webhook Health", value: "Healthy" },
-    { label: "Arbitration Policy", value: "Default" },
+    { label: "Custody Model", value: "Server-managed" },
+    { label: "Pool Signer", value: "Not initialized" },
+    { label: "Wallet Encryption", value: "Pending" },
+    { label: "Automation Auth", value: "Pending" },
   ];
+}
+
+export function createDefaultSettingsState(): SettingsState {
+  return {
+    cards: settingsCards,
+    workspaceSummary: createWorkspaceSummary(),
+    securitySummary: createSecuritySummary(),
+  };
 }
 
 export function createDefaultState(): PersistedState {
   return {
-    deals: initialDeals,
-    disputes: initialDisputes,
-    auditEvents: initialAuditEvents,
-    counterparties: initialCounterparties,
-    settings: {
-      cards: settingsCards,
-      workspaceSummary: createWorkspaceSummary(),
-      securitySummary: createSecuritySummary(),
-    },
+    deals: [],
+    disputes: [],
+    auditEvents: [],
+    counterparties: [],
+    settings: createDefaultSettingsState(),
   };
 }

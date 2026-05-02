@@ -3,24 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 
 import {
-  auditEvents,
   auditFilters,
-  auditStats,
   counterpartyFilters,
-  counterpartyStats,
-  counterparties,
-  createFields,
   createSteps,
   dealFilters,
-  deals,
-  dealsStats,
   disputeFilters,
-  disputes,
-  disputesStats,
-  overviewStats,
-  settingsCards,
 } from "@/lib/mock-data";
 import { createDealMetadataUri, resolveCounterpartyWallet } from "@/lib/tradelock-counterparty-wallets";
+import { createDefaultSettingsState } from "@/lib/tradelock-default-state";
 import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 import { approveSettlementToken, formatSettlementAmount, getEscrowContractAddress, getInjectedProvider, getSettlementTokenAddress, getShortAddress, getWalletSnapshot, getConfiguredChainId, isEscrowContractConfigured, formatWalletError, resolveChainName, switchToConfiguredChain, writeEscrowContract } from "@/lib/tradelock-web3";
 import type { CustodySnapshot, Deal, ScreenKey, SystemStatus, TradeLockAppState, WalletState } from "@/lib/types";
@@ -43,35 +33,18 @@ const defaultAppState: TradeLockAppState = {
   disputeFilters,
   auditFilters,
   counterpartyFilters,
-  deals,
-  disputes,
-  auditEvents,
-  counterparties,
-  overviewStats,
-  dealsStats,
-  disputesStats,
-  auditStats,
-  counterpartyStats,
+  deals: [],
+  disputes: [],
+  auditEvents: [],
+  counterparties: [],
+  overviewStats: [],
+  dealsStats: [],
+  disputesStats: [],
+  auditStats: [],
+  counterpartyStats: [],
   createSteps,
-  createFields,
-  settings: {
-    cards: settingsCards,
-    workspaceSummary: [
-      { label: "Verified Business", value: "Verified" },
-      { label: "Active Team Members", value: "12" },
-      { label: "2FA Enabled", value: "Yes" },
-      { label: "API Connected", value: "Yes" },
-      { label: "Default Network", value: "Arbitrum Sepolia" },
-      { label: "Notification Mode", value: "Daily Digest" },
-      { label: "Workspace ID", value: "TLK-GIL-882312" },
-    ],
-    securitySummary: [
-      { label: "Access Reviews", value: "Current" },
-      { label: "Login Alerts", value: "Enabled" },
-      { label: "Webhook Health", value: "Healthy" },
-      { label: "Arbitration Policy", value: "Default" },
-    ],
-  },
+  createFields: [],
+  settings: createDefaultSettingsState(),
 };
 
 const initialSystemStatus: SystemStatus = {
@@ -138,28 +111,29 @@ function TradeLockShell() {
   const [custodySnapshot, setCustodySnapshot] = useState<CustodySnapshot | null>(null);
   const [walletState, setWalletState] = useState<WalletState>(defaultWalletState);
   const [walletManuallyDisconnected, setWalletManuallyDisconnected] = useState(false);
+  const [hasLoadedWorkspace, setHasLoadedWorkspace] = useState(false);
   const [dealActionState, setDealActionState] = useState<{ dealId?: string; action?: "approve" | "fund" | "release" | "dispute" }>({});
-  const [selectedDealId, setSelectedDealId] = useState(defaultAppState.deals[0].id);
-  const [selectedDisputeId, setSelectedDisputeId] = useState(defaultAppState.disputes[0].id);
-  const [selectedEventId, setSelectedEventId] = useState(defaultAppState.auditEvents[0].id);
-  const [selectedCounterparty, setSelectedCounterparty] = useState(defaultAppState.counterparties[0].company);
+  const [selectedDealId, setSelectedDealId] = useState("");
+  const [selectedDisputeId, setSelectedDisputeId] = useState("");
+  const [selectedEventId, setSelectedEventId] = useState("");
+  const [selectedCounterparty, setSelectedCounterparty] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
 
   const selectedDeal = useMemo(
-    () => data.deals.find((deal) => deal.id === selectedDealId) ?? data.deals[0],
+    () => data.deals.find((deal) => deal.id === selectedDealId) ?? data.deals[0] ?? null,
     [data.deals, selectedDealId],
   );
   const selectedDispute = useMemo(
-    () => data.disputes.find((dispute) => dispute.id === selectedDisputeId) ?? data.disputes[0],
+    () => data.disputes.find((dispute) => dispute.id === selectedDisputeId) ?? data.disputes[0] ?? null,
     [data.disputes, selectedDisputeId],
   );
   const selectedEvent = useMemo(
-    () => data.auditEvents.find((event) => event.id === selectedEventId) ?? data.auditEvents[0],
+    () => data.auditEvents.find((event) => event.id === selectedEventId) ?? data.auditEvents[0] ?? null,
     [data.auditEvents, selectedEventId],
   );
   const selectedCounterpartyCard = useMemo(
-    () => data.counterparties.find((entry) => entry.company === selectedCounterparty) ?? data.counterparties[0],
+    () => data.counterparties.find((entry) => entry.company === selectedCounterparty) ?? data.counterparties[0] ?? null,
     [data.counterparties, selectedCounterparty],
   );
 
@@ -365,6 +339,7 @@ function TradeLockShell() {
 
       const nextData = (await response.json()) as TradeLockAppState;
       setData(nextData);
+      setHasLoadedWorkspace(true);
     } catch (error) {
       if (notifyOnError) {
         toast({
@@ -430,21 +405,26 @@ function TradeLockShell() {
     setIsSyncing(true);
 
     try {
+      const buyer = data.counterparties.find((entry) => entry.role === "Buyer");
+      const seller =
+        data.counterparties.find(
+          (entry) => entry.role === "Seller" && entry.location !== buyer?.location,
+        ) ?? data.counterparties.find((entry) => entry.role === "Seller");
       const response = await fetch("/api/deals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          buyer: "GlobalImport Ltd.",
-          buyerLocation: "Singapore",
-          seller: "Shenzhen Parts Co.",
-          sellerLocation: "China",
-          amountRaw: "5,000.00",
-          milestone: "Buyer confirmation pending",
+          buyer: buyer?.company,
+          buyerLocation: buyer?.location,
+          seller: seller?.company,
+          sellerLocation: seller?.location,
+          amountRaw: "25,000.00",
+          milestone: "Awaiting token approval",
           progress: "0/3",
           proofStatus: "Waiting Proof",
           status: "Active",
           network: "Arbitrum Sepolia",
-          proofFile: "AwaitingUpload",
+          proofFile: "Pending upload",
         }),
       });
 
@@ -539,10 +519,10 @@ function TradeLockShell() {
       setActiveScreen("deals");
       toast({
         type: "success",
-        title: onchainCreated ? "Deal created on-chain" : "Demo deal created",
-        description: onchainCreated
-          ? `${payload.deal.id} is now tracked on Arbitrum Sepolia and in the audit trail.`
-          : `${payload.deal.id} is now available in the deals list and audit trail.`,
+          title: onchainCreated ? "Deal created on-chain" : "Deal draft created",
+          description: onchainCreated
+            ? `${payload.deal.id} is now tracked on Arbitrum Sepolia and in the audit trail.`
+            : `${payload.deal.id} is now available in the deals list and audit trail.`,
       });
 
       return payload.deal;
@@ -550,7 +530,7 @@ function TradeLockShell() {
       toast({
         type: "error",
         title: "Could not create deal",
-        description: error instanceof Error ? error.message : "Unexpected error while creating a demo deal.",
+        description: error instanceof Error ? error.message : "Unexpected error while creating a live deal.",
       });
       return null;
     } finally {
@@ -1038,6 +1018,12 @@ function TradeLockShell() {
         isDealActionPending,
       }}
     >
+      {!hasLoadedWorkspace ? (
+        <main className="relative min-h-screen overflow-hidden bg-[#020b1a]">
+          <SplashScreen />
+        </main>
+      ) : (
+        <>
       <SplashScreen />
       <CommandPalette
         open={commandOpen}
@@ -1060,17 +1046,20 @@ function TradeLockShell() {
           onDisconnectWallet={disconnectWallet}
           onSwitchWalletNetwork={() => void switchWalletNetwork()}
           onOpenSearch={() => setCommandOpen(true)}
+          onOpenCreateDeal={() => setActiveScreen("create")}
         >
-          {activeScreen === "dashboard" && <DashboardDesktopScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
-          {activeScreen === "deals" && <DealsDesktopScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
+          {activeScreen === "dashboard" && selectedDeal && <DashboardDesktopScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
+          {activeScreen === "deals" && selectedDeal && <DealsDesktopScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
           {activeScreen === "create" && <CreateDesktopScreen onCreated={setSelectedDealId} />}
-          {activeScreen === "disputes" && <DisputesDesktopScreen selectedDispute={selectedDispute} onSelectDispute={setSelectedDisputeId} />}
-          {activeScreen === "audit" && <AuditDesktopScreen selectedEvent={selectedEvent} onSelectEvent={setSelectedEventId} />}
+          {activeScreen === "disputes" && selectedDispute && <DisputesDesktopScreen selectedDispute={selectedDispute} onSelectDispute={setSelectedDisputeId} />}
+          {activeScreen === "audit" && selectedEvent && <AuditDesktopScreen selectedEvent={selectedEvent} onSelectEvent={setSelectedEventId} />}
           {activeScreen === "counterparties" && (
+            selectedCounterpartyCard ? (
             <CounterpartiesDesktopScreen
               selectedCounterparty={selectedCounterpartyCard}
               onSelectCounterparty={setSelectedCounterparty}
             />
+            ) : null
           )}
           {activeScreen === "settings" && <SettingsDesktopScreen />}
         </DesktopLayout>
@@ -1086,22 +1075,27 @@ function TradeLockShell() {
           onConnectWallet={() => void connectWallet()}
           onDisconnectWallet={disconnectWallet}
           onSwitchWalletNetwork={() => void switchWalletNetwork()}
+          onOpenCreateDeal={() => setActiveScreen("create")}
         >
-          {activeScreen === "dashboard" && <DashboardMobileScreen selectedDeal={selectedDeal} />}
-          {activeScreen === "deals" && <DealsMobileScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
+          {activeScreen === "dashboard" && selectedDeal && <DashboardMobileScreen selectedDeal={selectedDeal} />}
+          {activeScreen === "deals" && selectedDeal && <DealsMobileScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
           {activeScreen === "create" && <CreateMobileScreen onCreated={setSelectedDealId} />}
-          {activeScreen === "disputes" && <DisputesMobileScreen selectedDispute={selectedDispute} onSelectDispute={setSelectedDisputeId} />}
-          {activeScreen === "audit" && <AuditMobileScreen selectedEvent={selectedEvent} onSelectEvent={setSelectedEventId} />}
+          {activeScreen === "disputes" && selectedDispute && <DisputesMobileScreen selectedDispute={selectedDispute} onSelectDispute={setSelectedDisputeId} />}
+          {activeScreen === "audit" && selectedEvent && <AuditMobileScreen selectedEvent={selectedEvent} onSelectEvent={setSelectedEventId} />}
           {activeScreen === "counterparties" && (
+            selectedCounterpartyCard ? (
             <CounterpartiesMobileScreen
               selectedCounterparty={selectedCounterpartyCard}
               onSelectCounterparty={setSelectedCounterparty}
             />
+            ) : null
           )}
           {activeScreen === "settings" && <SettingsMobileScreen />}
         </MobileLayout>
       </div>
       </main>
+        </>
+      )}
     </TradeLockDataProvider>
   );
 }
