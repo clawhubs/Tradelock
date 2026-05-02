@@ -84,8 +84,29 @@ function compareText(a: string, b: string) {
   return a.localeCompare(b, "en-US", { sensitivity: "base" });
 }
 
+function parseAutoSequence(value?: string | null) {
+  if (!value) {
+    return 0;
+  }
+
+  const [, encoded] = value.split("-");
+
+  if (!encoded) {
+    return 0;
+  }
+
+  const sequence = Number.parseInt(encoded, 36);
+  return Number.isNaN(sequence) ? 0 : sequence;
+}
+
 function sortDealsByUpdated(deals: Deal[]) {
   return [...deals].sort((a, b) => {
+    const byAutoSequence = parseAutoSequence(b.id) - parseAutoSequence(a.id);
+
+    if (byAutoSequence !== 0) {
+      return byAutoSequence;
+    }
+
     const byUpdated = parseDisplayTimestamp(b.updated) - parseDisplayTimestamp(a.updated);
 
     if (byUpdated !== 0) {
@@ -98,6 +119,12 @@ function sortDealsByUpdated(deals: Deal[]) {
 
 function sortDisputesByUpdated(disputes: Dispute[]) {
   return [...disputes].sort((a, b) => {
+    const byDealSequence = parseAutoSequence(b.dealId) - parseAutoSequence(a.dealId);
+
+    if (byDealSequence !== 0) {
+      return byDealSequence;
+    }
+
     const byUpdated = parseDisplayTimestamp(b.updated) - parseDisplayTimestamp(a.updated);
 
     if (byUpdated !== 0) {
@@ -110,6 +137,12 @@ function sortDisputesByUpdated(disputes: Dispute[]) {
 
 function sortAuditEventsByTimestamp(events: AuditEvent[]) {
   return [...events].sort((a, b) => {
+    const byDealSequence = parseAutoSequence(b.dealId) - parseAutoSequence(a.dealId);
+
+    if (byDealSequence !== 0) {
+      return byDealSequence;
+    }
+
     const byTimestamp = parseDisplayTimestamp(b.timestamp) - parseDisplayTimestamp(a.timestamp);
 
     if (byTimestamp !== 0) {
@@ -120,9 +153,19 @@ function sortAuditEventsByTimestamp(events: AuditEvent[]) {
   });
 }
 
-function sortCounterpartiesByLastDeal(counterparties: Counterparty[]) {
+function sortCounterpartiesByLastDeal(counterparties: Counterparty[], deals: Deal[]) {
+  const dealRank = new Map<string, number>();
+
+  deals.forEach((deal, index) => {
+    dealRank.set(deal.id, index);
+  });
+
   return [...counterparties].sort((a, b) => {
-    const byLastDeal = parseDisplayTimestamp(b.lastDeal) - parseDisplayTimestamp(a.lastDeal);
+    const latestDealA = deals.find((deal) => deal.buyer === a.company || deal.seller === a.company);
+    const latestDealB = deals.find((deal) => deal.buyer === b.company || deal.seller === b.company);
+    const rankA = latestDealA ? (dealRank.get(latestDealA.id) ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
+    const rankB = latestDealB ? (dealRank.get(latestDealB.id) ?? Number.MAX_SAFE_INTEGER) : Number.MAX_SAFE_INTEGER;
+    const byLastDeal = rankA - rankB;
 
     if (byLastDeal !== 0) {
       return byLastDeal;
@@ -245,9 +288,7 @@ function syncCounterparties(counterparties: Counterparty[], deals: Deal[]) {
   return counterparties.map((entry) => {
     const relatedDeals = deals.filter((deal) => deal.buyer === entry.company || deal.seller === entry.company);
     const totalVolume = relatedDeals.reduce((sum, deal) => sum + parseAmount(deal.amountRaw), 0);
-    const latestDeal = [...relatedDeals].sort(
-      (a, b) => parseDisplayTimestamp(b.updated) - parseDisplayTimestamp(a.updated),
-    )[0];
+    const latestDeal = relatedDeals[0];
 
     return {
       ...entry,
@@ -430,7 +471,7 @@ export async function getAppState(): Promise<TradeLockAppState> {
   const deals = sortDealsByUpdated(state.deals);
   const disputes = sortDisputesByUpdated(state.disputes);
   const auditEvents = sortAuditEventsByTimestamp(state.auditEvents);
-  const counterparties = sortCounterpartiesByLastDeal(syncCounterparties(state.counterparties, deals));
+  const counterparties = sortCounterpartiesByLastDeal(syncCounterparties(state.counterparties, deals), deals);
   const appState: TradeLockAppState = {
     dealFilters,
     disputeFilters,
@@ -599,7 +640,8 @@ export async function createAuditEvent(input: Partial<AuditEvent>) {
 
 export async function listCounterparties() {
   const state = await readState();
-  return sortCounterpartiesByLastDeal(syncCounterparties(state.counterparties, sortDealsByUpdated(state.deals)));
+  const deals = sortDealsByUpdated(state.deals);
+  return sortCounterpartiesByLastDeal(syncCounterparties(state.counterparties, deals), deals);
 }
 
 export async function upsertCounterparty(input: Counterparty) {
