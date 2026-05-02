@@ -14,14 +14,18 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
     "@tailwindcss/postcss": "^4.2.4",
+    "@types/d3-geo": "^3.1.0",
+    "@types/topojson-client": "^3.1.5",
     "@upstash/qstash": "^2.10.1",
     "@upstash/redis": "^1.37.0",
+    "d3-geo": "^3.1.1",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.11.0",
     "next": "^16.2.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "tailwindcss": "^4.2.4",
+    "topojson-client": "^3.1.0",
     "viem": "^2.48.7"
   },
   "devDependencies": {
