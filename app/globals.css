@@ -61,10 +61,42 @@ a {
   text-decoration: none;
 }
 
+a[href] {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 0.22em;
+  transition:
+    color 160ms ease,
+    text-decoration-color 160ms ease,
+    opacity 160ms ease;
+}
+
+a[href]:hover,
+a[href]:focus-visible {
+  color: #bfe7ff;
+  text-decoration-color: currentColor;
+}
+
 button,
 input,
 select {
   font: inherit;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+label[for],
+summary,
+select,
+input[type="checkbox"],
+input[type="radio"] {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
 
 .display-font {
