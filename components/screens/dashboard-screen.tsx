@@ -172,9 +172,15 @@ export function DashboardDesktopScreen({
   const { data, custodySnapshot, releaseFundsForDeal, openDisputeForDeal, walletState } = useTradeLockData();
   const { toast } = useToast();
   const { deals, disputes, overviewStats, auditEvents } = data;
+  const liveSelectedDeal =
+    (custodySnapshot?.recentActivity?.[0]?.dealId
+      ? deals.find((deal) => deal.id === custodySnapshot.recentActivity[0]?.dealId)
+      : null) ??
+    deals[0] ??
+    selectedDeal;
   const overviewRows = deals.slice(0, 4);
-  const selectedDispute = disputes.find((dispute) => dispute.dealId === selectedDeal.id);
-  const selectedDealTxUrl = getTxExplorerUrl(selectedDeal.txHash);
+  const selectedDispute = disputes.find((dispute) => dispute.dealId === liveSelectedDeal.id);
+  const selectedDealTxUrl = getTxExplorerUrl(liveSelectedDeal.txHash);
   const activityRows =
     custodySnapshot?.recentActivity?.slice(0, 4).map((event) => [
       event.type === "daily-user" ? "New User Joined" : event.type === "dispute" ? "Live Dispute" : "Live Activity",
@@ -349,7 +355,7 @@ export function DashboardDesktopScreen({
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 + 0.25, duration: 0.25, ease: "easeOut" }}
                       onClick={() => onSelectDeal(deal.id)}
-                      className={`cursor-pointer transition ${deal.id === selectedDeal.id ? "bg-blue-500/8" : ""} hover:bg-white/[0.03]`}
+                      className={`cursor-pointer transition ${deal.id === liveSelectedDeal.id ? "bg-blue-500/8" : ""} hover:bg-white/[0.03]`}
                     >
                       <td className="px-3 py-3 font-medium text-[11px] text-white">{deal.id}</td>
                       <td className="px-3 py-3">
@@ -377,15 +383,15 @@ export function DashboardDesktopScreen({
 
           <Panel
             title="Selected Deal"
-            action={<StatusBadge status={selectedDeal.status} compact />}
+            action={<StatusBadge status={liveSelectedDeal.status} compact />}
             className="self-start"
           >
             <div className="grid gap-0 xl:grid-cols-[240px_1fr_1fr_1fr]">
               <div className="border-b border-white/8 pb-3 xl:border-b-0 xl:border-r xl:pr-5">
                 <div className="text-[10px] uppercase tracking-[0.08em] text-slate-400">Escrow ID</div>
-                <div className="mt-2 display-font text-[33px] font-semibold leading-none text-white">{selectedDeal.id}</div>
+                <div className="mt-2 display-font text-[33px] font-semibold leading-none text-white">{liveSelectedDeal.id}</div>
                 <div className="mt-4 space-y-3 text-[12px]">
-                  <div className="flex justify-between gap-3"><span className="text-slate-400">Amount</span><span className="text-white">{selectedDeal.amount}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-slate-400">Amount</span><span className="text-white">{liveSelectedDeal.amount}</span></div>
                   <div className="flex justify-between gap-3">
                     <span className="text-slate-400">Network</span>
                     <span className="flex items-center gap-2 text-white">
@@ -398,35 +404,35 @@ export function DashboardDesktopScreen({
 
               <div className="border-b border-white/8 py-3 xl:border-b-0 xl:border-r xl:px-4 xl:py-0">
                 <div className="text-[10px] text-slate-400">Buyer</div>
-                <div className="mt-1 flex items-start gap-2 text-[12px] text-white"><span>{flagFor(selectedDeal.buyer)}</span><span>{selectedDeal.buyer}</span></div>
-                <div className="text-[10px] text-slate-400">{selectedDeal.buyerLocation}</div>
+                <div className="mt-1 flex items-start gap-2 text-[12px] text-white"><span>{flagFor(liveSelectedDeal.buyer)}</span><span>{liveSelectedDeal.buyer}</span></div>
+                <div className="text-[10px] text-slate-400">{liveSelectedDeal.buyerLocation}</div>
                 <div className="mt-5 text-[10px] text-slate-400">Proof Submitted</div>
-                <div className="mt-1 flex items-center gap-2 text-[12px] text-white"><FileText className="h-4 w-4 text-slate-400" />{selectedDeal.proofFile}</div>
+                <div className="mt-1 flex items-center gap-2 text-[12px] text-white"><FileText className="h-4 w-4 text-slate-400" />{liveSelectedDeal.proofFile}</div>
               </div>
 
               <div className="border-b border-white/8 py-3 xl:border-b-0 xl:border-r xl:px-4 xl:py-0">
                 <div className="text-[10px] text-slate-400">Seller</div>
-                <div className="mt-1 flex items-start gap-2 text-[12px] text-white"><span>{flagFor(selectedDeal.seller)}</span><span>{selectedDeal.seller}</span></div>
-                <div className="text-[10px] text-slate-400">{selectedDeal.sellerLocation}</div>
+                <div className="mt-1 flex items-start gap-2 text-[12px] text-white"><span>{flagFor(liveSelectedDeal.seller)}</span><span>{liveSelectedDeal.seller}</span></div>
+                <div className="text-[10px] text-slate-400">{liveSelectedDeal.sellerLocation}</div>
                 <div className="mt-5 text-[10px] text-slate-400">Proof Status</div>
-                <div className="mt-1 flex items-center gap-2 text-[12px] text-emerald-300"><CheckCircle2 className="h-4 w-4" />{selectedDeal.proofStatus}</div>
+                <div className="mt-1 flex items-center gap-2 text-[12px] text-emerald-300"><CheckCircle2 className="h-4 w-4" />{liveSelectedDeal.proofStatus}</div>
               </div>
 
               <div className="pt-3 xl:pl-4 xl:pt-0">
                 <div className="space-y-4 text-[12px]">
                   <div>
                     <div className="text-[10px] text-slate-400">Last Update</div>
-                    <div className="mt-1 text-white">{fullTimestamp(selectedDeal.updated)}</div>
+                    <div className="mt-1 text-white">{fullTimestamp(liveSelectedDeal.updated)}</div>
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-400">TX Hash</div>
                     {selectedDealTxUrl ? (
                       <a href={selectedDealTxUrl} target="_blank" rel="noreferrer" className="mt-1 flex items-center gap-1.5 text-blue-300 hover:text-blue-200">
-                        <span>{shortenHash(selectedDeal.txHash)}</span>
+                        <span>{shortenHash(liveSelectedDeal.txHash)}</span>
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     ) : (
-                      <div className="mt-1 text-slate-400">{selectedDeal.txHash}</div>
+                      <div className="mt-1 text-slate-400">{liveSelectedDeal.txHash}</div>
                     )}
                   </div>
                   {selectedDispute && (
@@ -447,7 +453,7 @@ export function DashboardDesktopScreen({
             action={
               <button
                 type="button"
-                onClick={() => onViewSelectedDealDetails(selectedDeal.id)}
+                onClick={() => onViewSelectedDealDetails(liveSelectedDeal.id)}
                 className="text-[11px] text-blue-300 transition hover:text-blue-200"
               >
                 View details
@@ -535,7 +541,7 @@ export function DashboardDesktopScreen({
               label="Release Funds"
               icon={Lock}
               small
-              onClick={() => void releaseFundsForDeal(selectedDeal)}
+              onClick={() => void releaseFundsForDeal(liveSelectedDeal)}
               disabled={!walletState.isConnected || !walletState.isCorrectNetwork || !walletState.contractReady}
             />
             <ActionButton
@@ -544,7 +550,7 @@ export function DashboardDesktopScreen({
               icon={ShieldAlert}
               outlined
               small
-              onClick={() => void openDisputeForDeal(selectedDeal)}
+              onClick={() => void openDisputeForDeal(liveSelectedDeal)}
               disabled={!walletState.isConnected || !walletState.isCorrectNetwork || !walletState.contractReady}
             />
           </div>
@@ -600,8 +606,14 @@ export function DashboardMobileScreen({
   const { data, custodySnapshot, releaseFundsForDeal, openDisputeForDeal, walletState } = useTradeLockData();
   const { toast } = useToast();
   const { deals, disputes, auditEvents } = data;
+  const liveSelectedDeal =
+    (custodySnapshot?.recentActivity?.[0]?.dealId
+      ? deals.find((deal) => deal.id === custodySnapshot.recentActivity[0]?.dealId)
+      : null) ??
+    deals[0] ??
+    selectedDeal;
   const recentDeals = deals.slice(0, 4);
-  const selectedDealTxUrl = getTxExplorerUrl(selectedDeal.txHash);
+  const selectedDealTxUrl = getTxExplorerUrl(liveSelectedDeal.txHash);
   const activityRows =
     custodySnapshot?.recentActivity?.slice(0, 4).map((event) => [
       event.type === "daily-user" ? "New User Joined" : event.type === "dispute" ? "Live Dispute" : "Live Activity",
@@ -823,9 +835,9 @@ export function DashboardMobileScreen({
           <div className="flex items-center justify-between">
             <div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">Selected Deal</div>
-              <div className="mt-0.5 display-font text-[1.4rem] font-semibold leading-none text-white">{selectedDeal.id}</div>
+              <div className="mt-0.5 display-font text-[1.4rem] font-semibold leading-none text-white">{liveSelectedDeal.id}</div>
             </div>
-            <StatusBadge status={selectedDeal.status} compact />
+            <StatusBadge status={liveSelectedDeal.status} compact />
           </div>
         </div>
 
@@ -834,11 +846,11 @@ export function DashboardMobileScreen({
             <div className="text-[9px] uppercase tracking-widest text-slate-500">Buyer</div>
             <div className="mt-2 flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-500/15 text-[15px]">
-                {flagFor(selectedDeal.buyer)}
+                {flagFor(liveSelectedDeal.buyer)}
               </div>
               <div className="min-w-0">
-                <div className="truncate text-[11px] font-semibold text-white">{selectedDeal.buyer}</div>
-                <div className="truncate text-[9px] text-slate-400">{selectedDeal.buyerLocation}</div>
+                <div className="truncate text-[11px] font-semibold text-white">{liveSelectedDeal.buyer}</div>
+                <div className="truncate text-[9px] text-slate-400">{liveSelectedDeal.buyerLocation}</div>
               </div>
             </div>
           </div>
@@ -846,11 +858,11 @@ export function DashboardMobileScreen({
             <div className="text-[9px] uppercase tracking-widest text-slate-500">Seller</div>
             <div className="mt-2 flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-500/15 text-[15px]">
-                {flagFor(selectedDeal.seller)}
+                {flagFor(liveSelectedDeal.seller)}
               </div>
               <div className="min-w-0">
-                <div className="truncate text-[11px] font-semibold text-white">{selectedDeal.seller}</div>
-                <div className="truncate text-[9px] text-slate-400">{selectedDeal.sellerLocation}</div>
+                <div className="truncate text-[11px] font-semibold text-white">{liveSelectedDeal.seller}</div>
+                <div className="truncate text-[9px] text-slate-400">{liveSelectedDeal.sellerLocation}</div>
               </div>
             </div>
           </div>
@@ -859,7 +871,7 @@ export function DashboardMobileScreen({
         <div className="grid grid-cols-2 divide-x divide-white/[0.05] border-y border-white/[0.05]">
           <div className="px-4 py-3">
             <div className="text-[9px] uppercase tracking-widest text-slate-500">Amount</div>
-            <div className="mt-1 text-[14px] font-semibold text-white">{selectedDeal.amount}</div>
+            <div className="mt-1 text-[14px] font-semibold text-white">{liveSelectedDeal.amount}</div>
           </div>
           <div className="px-4 py-3">
             <div className="text-[9px] uppercase tracking-widest text-slate-500">Network</div>
@@ -875,29 +887,29 @@ export function DashboardMobileScreen({
             <span className="text-slate-400">Proof Submitted</span>
             <span className="flex items-center gap-1.5 text-white">
               <FileText className="h-3 w-3 text-slate-400" />
-              {selectedDeal.proofFile}
+              {liveSelectedDeal.proofFile}
             </span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-slate-400">Proof Status</span>
             <span className="flex items-center gap-1 text-emerald-300">
               <CheckCircle2 className="h-3 w-3" />
-              {selectedDeal.proofStatus}
+              {liveSelectedDeal.proofStatus}
             </span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-slate-400">Last Update</span>
-            <span className="text-white">{fullTimestamp(selectedDeal.updated)}</span>
+            <span className="text-white">{fullTimestamp(liveSelectedDeal.updated)}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-slate-400">TX Hash</span>
             {selectedDealTxUrl ? (
               <a href={selectedDealTxUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 font-mono text-blue-300 hover:text-blue-200">
-                {shortenHash(selectedDeal.txHash)}
+                {shortenHash(liveSelectedDeal.txHash)}
                 <ExternalLink className="h-3 w-3" />
               </a>
             ) : (
-              <span className="text-slate-400">{selectedDeal.txHash}</span>
+              <span className="text-slate-400">{liveSelectedDeal.txHash}</span>
             )}
           </div>
         </div>
@@ -908,7 +920,7 @@ export function DashboardMobileScreen({
             label="Release"
             icon={Lock}
             small
-            onClick={() => void releaseFundsForDeal(selectedDeal)}
+            onClick={() => void releaseFundsForDeal(liveSelectedDeal)}
             disabled={!walletState.isConnected || !walletState.isCorrectNetwork || !walletState.contractReady}
           />
           <ActionButton
@@ -917,7 +929,7 @@ export function DashboardMobileScreen({
             icon={ShieldAlert}
             outlined
             small
-            onClick={() => void openDisputeForDeal(selectedDeal)}
+            onClick={() => void openDisputeForDeal(liveSelectedDeal)}
             disabled={!walletState.isConnected || !walletState.isCorrectNetwork || !walletState.contractReady}
           />
         </div>
@@ -932,7 +944,7 @@ export function DashboardMobileScreen({
         <div className="pointer-events-none absolute inset-x-[20%] top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(120,170,255,0.5),transparent)]" />
         <div className="mb-3 flex items-center justify-between">
           <div className="text-[13px] font-semibold text-white">Escrow Overview</div>
-          <button type="button" onClick={() => onViewSelectedDealDetails(selectedDeal.id)} className="text-[10px] text-blue-300">View details</button>
+          <button type="button" onClick={() => onViewSelectedDealDetails(liveSelectedDeal.id)} className="text-[10px] text-blue-300">View details</button>
         </div>
         <div className="flex items-center gap-4">
           <motion.div
