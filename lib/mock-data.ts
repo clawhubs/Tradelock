@@ -68,6 +68,7 @@ const counterpartyDirectory = {
 };
 
 export const navItems: NavItem[] = [
+  { key: "judge", label: "Judge Mode", shortLabel: "Judge" },
   { key: "dashboard", label: "Dashboard", shortLabel: "Home" },
   { key: "deals", label: "Deals", shortLabel: "Deals" },
   { key: "create", label: "Create Deal", shortLabel: "Create" },
@@ -561,6 +562,14 @@ export const settingsCards: SettingsCard[] = [
 ];
 
 export const screenFeatures: Record<ScreenKey, FeatureCard[]> = {
+  judge: [
+    { title: "Guided Demo Review", subtitle: "Every claim mapped", tone: "blue" },
+    { title: "Counterparty Mapping", subtitle: "Wallets, roles, trust", tone: "cyan" },
+    { title: "Dispute Evidence", subtitle: "Frozen funds visible", tone: "orange" },
+    { title: "Architecture Trace", subtitle: "QStash to contracts", tone: "purple" },
+    { title: "Proof Trail", subtitle: "IPFS and audit links", tone: "green" },
+    { title: "Judge-ready Deck", subtitle: "HTML and PDF pitch", tone: "blue" },
+  ],
   dashboard: [
     { title: "Smart Contract Powered", subtitle: "Immutable & Automated", tone: "blue" },
     { title: "Non-custodial & Transparent", subtitle: "Funds stay verifiable", tone: "cyan" },

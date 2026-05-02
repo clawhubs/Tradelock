@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TradeLock Pitch Deck</title>
+    <style>
+      @page {
+        size: A4 landscape;
+        margin: 0;
+      }
+
+      :root {
+        --bg: #020817;
+        --panel: #061329;
+        --panel-2: #081a35;
+        --line: rgba(96, 165, 250, 0.22);
+        --line-strong: rgba(56, 189, 248, 0.5);
+        --blue: #3b82f6;
+        --cyan: #22d3ee;
+        --mint: #34d399;
+        --amber: #f59e0b;
+        --text: #f8fbff;
+        --muted: #a9bad3;
+        --soft: rgba(255, 255, 255, 0.065);
+        --shadow: 0 30px 90px rgba(0, 0, 0, 0.56);
+        --slide-w: 297mm;
+        --slide-h: 210mm;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      .deck {
+        display: flex;
+        height: 100vh;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+      }
+
+      .deck::-webkit-scrollbar {
+        height: 10px;
+      }
+
+      .deck::-webkit-scrollbar-track {
+        background: #020817;
+      }
+
+      .deck::-webkit-scrollbar-thumb {
+        background: linear-gradient(90deg, var(--blue), var(--cyan), var(--mint));
+        border-radius: 999px;
+      }
+
+      .slide {
+        position: relative;
+        flex: 0 0 100vw;
+        height: 100vh;
+        min-width: 100vw;
+        scroll-snap-align: start;
+        display: grid;
+        place-items: center;
+        padding: 22px;
+        overflow: hidden;
+      }
+
+      .sheet {
+        position: relative;
+        width: min(var(--slide-w), calc(100vw - 44px));
+        aspect-ratio: 297 / 210;
+        max-height: calc(100vh - 44px);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background:
+          radial-gradient(circle at 84% 14%, rgba(34, 211, 238, 0.16), transparent 25%),
+          radial-gradient(circle at 8% 8%, rgba(59, 130, 246, 0.2), transparent 28%),
+          linear-gradient(145deg, #071735 0%, #041024 48%, #020817 100%);
+        box-shadow: var(--shadow);
+      }
+
+      .sheet::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(90deg, rgba(96, 165, 250, 0.07) 1px, transparent 1px),
+          linear-gradient(rgba(96, 165, 250, 0.06) 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: radial-gradient(circle at 42% 34%, black, transparent 78%);
+      }
+
+      .inner {
+        position: relative;
+        z-index: 2;
+        height: 100%;
+        padding: 38px 44px;
+      }
+
+      .footer {
+        position: absolute;
+        left: 44px;
+        right: 44px;
+        bottom: 28px;
+        z-index: 3;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        color: rgba(200, 216, 238, 0.72);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 28px;
+        padding: 6px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: #bfefff;
+        background: rgba(5, 20, 42, 0.74);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--cyan);
+        box-shadow: 0 0 22px rgba(34, 211, 238, 0.9);
+      }
+
+      h1 {
+        max-width: 790px;
+        margin-top: 26px;
+        font-size: clamp(52px, 5.5vw, 82px);
+        line-height: 0.92;
+        letter-spacing: -0.055em;
+      }
+
+      h2 {
+        max-width: 850px;
+        margin-top: 18px;
+        font-size: clamp(38px, 4.4vw, 62px);
+        line-height: 0.98;
+        letter-spacing: -0.045em;
+      }
+
+      h3 {
+        font-size: 18px;
+        line-height: 1.2;
+      }
+
+      .lead {
+        max-width: 760px;
+        margin-top: 18px;
+        color: #d1ddec;
+        font-size: 19px;
+        line-height: 1.54;
+      }
+
+      .cyan {
+        color: var(--cyan);
+      }
+
+      .mint {
+        color: var(--mint);
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .two {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .three {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .four {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .card {
+        min-height: 118px;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 10px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.026)),
+          rgba(6, 19, 41, 0.84);
+        padding: 18px;
+      }
+
+      .card strong {
+        display: block;
+        color: #fff;
+        font-size: 18px;
+        line-height: 1.25;
+      }
+
+      .card span,
+      .mini,
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .metric {
+        border-left: 3px solid var(--cyan);
+      }
+
+      .metric .value {
+        display: block;
+        margin: 7px 0 4px;
+        color: #fff;
+        font-size: 34px;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.04em;
+      }
+
+      .hero-art {
+        position: absolute;
+        inset: auto 36px 34px auto;
+        width: 360px;
+        height: 360px;
+        border-radius: 42px;
+        border: 1px solid rgba(34, 211, 238, 0.28);
+        background:
+          radial-gradient(circle at 40% 32%, rgba(34, 211, 238, 0.38), transparent 20%),
+          radial-gradient(circle at 70% 74%, rgba(52, 211, 153, 0.2), transparent 26%),
+          linear-gradient(145deg, rgba(59, 130, 246, 0.16), rgba(2, 8, 23, 0.58));
+        box-shadow: inset 0 0 80px rgba(34, 211, 238, 0.08), 0 30px 80px rgba(0, 0, 0, 0.38);
+      }
+
+      .hero-art::before,
+      .hero-art::after {
+        content: "";
+        position: absolute;
+        border-radius: 999px;
+        border: 1px solid rgba(191, 239, 255, 0.3);
+      }
+
+      .hero-art::before {
+        inset: 76px;
+      }
+
+      .hero-art::after {
+        inset: 132px;
+        background: linear-gradient(135deg, var(--blue), var(--cyan));
+        box-shadow: 0 0 38px rgba(34, 211, 238, 0.7);
+      }
+
+      .hero-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: flex-end;
+        margin-top: 34px;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        max-width: 760px;
+      }
+
+      .pill {
+        padding: 9px 12px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: #e8f7ff;
+        background: rgba(6, 19, 41, 0.8);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 0.96fr 1.04fr;
+        gap: 24px;
+        align-items: center;
+        margin-top: 24px;
+      }
+
+      .flow {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 30px;
+      }
+
+      .flow::before {
+        content: "";
+        position: absolute;
+        left: 10%;
+        right: 10%;
+        top: 52px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--blue), var(--cyan), var(--mint));
+        opacity: 0.86;
+      }
+
+      .node {
+        position: relative;
+        min-height: 132px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: rgba(5, 16, 36, 0.88);
+      }
+
+      .node::before {
+        content: attr(data-step);
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        margin-bottom: 14px;
+        border-radius: 999px;
+        color: #03101d;
+        background: linear-gradient(135deg, var(--cyan), var(--mint));
+        font-weight: 900;
+      }
+
+      .node strong {
+        display: block;
+        margin-bottom: 5px;
+        color: #fff;
+        font-size: 17px;
+        line-height: 1.25;
+      }
+
+      .flow-wide {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .flow-wide::before {
+        left: 6%;
+        right: 6%;
+      }
+
+      .flow-wide .node {
+        min-height: 158px;
+        padding: 14px;
+      }
+
+      .flow-wide .node strong {
+        font-size: 14px;
+      }
+
+      .screen {
+        position: relative;
+        min-height: 405px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        background: #040b18;
+      }
+
+      .browser-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 34px;
+        padding: 0 12px;
+        background: rgba(255, 255, 255, 0.055);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .browser-bar i {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+      }
+
+      .mock-ui {
+        padding: 18px;
+      }
+
+      .mock-hero {
+        min-height: 136px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background:
+          linear-gradient(135deg, rgba(59, 130, 246, 0.2), transparent),
+          rgba(255, 255, 255, 0.035);
+        padding: 18px;
+      }
+
+      .mock-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .mock-line {
+        height: 10px;
+        margin-top: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.09);
+      }
+
+      .address {
+        display: block;
+        margin-top: 8px;
+        color: #dbeafe;
+        font-family: "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+        font-size: 11px;
+        line-height: 1.55;
+        word-break: break-all;
+      }
+
+      .chart {
+        position: relative;
+        height: 156px;
+        margin-top: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        background:
+          linear-gradient(180deg, transparent 24%, rgba(255, 255, 255, 0.055) 24.4%, transparent 25%),
+          linear-gradient(180deg, transparent 49%, rgba(255, 255, 255, 0.055) 49.4%, transparent 50%),
+          linear-gradient(180deg, transparent 74%, rgba(255, 255, 255, 0.055) 74.4%, transparent 75%);
+      }
+
+      .chart svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .nav {
+        position: fixed;
+        left: 50%;
+        bottom: 18px;
+        z-index: 10;
+        display: flex;
+        gap: 10px;
+        transform: translateX(-50%);
+        padding: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 999px;
+        background: rgba(3, 8, 18, 0.78);
+        backdrop-filter: blur(14px);
+      }
+
+      .nav button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(6, 19, 41, 0.9);
+        color: #e5f7ff;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        padding: 10px 14px;
+      }
+
+      .nav button:hover {
+        border-color: var(--line-strong);
+        color: #fff;
+      }
+
+      .slide-no {
+        color: var(--cyan);
+      }
+
+      @media print {
+        html,
+        body {
+          overflow: visible;
+          background: #000;
+        }
+
+        .deck {
+          display: block;
+          height: auto;
+          overflow: visible;
+        }
+
+        .slide {
+          width: 297mm;
+          height: 210mm;
+          min-width: 297mm;
+          padding: 0;
+          page-break-after: always;
+        }
+
+        .sheet {
+          width: 297mm;
+          height: 210mm;
+          max-height: none;
+          border: 0;
+          box-shadow: none;
+          background: linear-gradient(145deg, #071735 0%, #041024 48%, #020817 100%);
+        }
+
+        .sheet::before {
+          opacity: 0.4;
+        }
+
+        .inner {
+          padding: 10mm 12mm;
+        }
+
+        h1 {
+          font-size: 44pt;
+          line-height: 0.98;
+        }
+
+        h2 {
+          font-size: 34pt;
+          line-height: 1.02;
+        }
+
+        .lead {
+          font-size: 13pt;
+          line-height: 1.42;
+        }
+
+        .card {
+          padding: 11pt;
+          min-height: 26mm;
+        }
+
+        .card strong {
+          font-size: 12pt;
+        }
+
+        .card span,
+        .mini,
+        .muted {
+          font-size: 8.5pt;
+        }
+
+        .metric .value {
+          font-size: 22pt;
+        }
+
+        .node {
+          min-height: 29mm;
+          padding: 10pt;
+        }
+
+        .flow-wide .node {
+          min-height: 34mm;
+        }
+
+        .screen {
+          min-height: 86mm;
+        }
+
+        .nav {
+          display: none;
+        }
+      }
+
+      @media (max-width: 760px) {
+        body {
+          overflow: auto;
+        }
+
+        .deck {
+          display: block;
+          height: auto;
+          overflow: visible;
+          scroll-snap-type: none;
+        }
+
+        .slide {
+          display: block;
+          width: 100%;
+          min-width: 0;
+          height: auto;
+          min-height: 0;
+          padding: 12px;
+          overflow: visible;
+        }
+
+        .sheet {
+          width: 100%;
+          max-height: none;
+          min-height: 0;
+          aspect-ratio: auto;
+          overflow: visible;
+        }
+
+        .inner {
+          height: auto;
+          padding: 22px 18px 28px;
+        }
+
+        h1 {
+          font-size: 36px;
+          line-height: 1.02;
+        }
+
+        h2 {
+          font-size: 30px;
+          line-height: 1.08;
+        }
+
+        .lead {
+          font-size: 15px;
+          line-height: 1.5;
+        }
+
+        .hero-row,
+        .split {
+          display: block;
+        }
+
+        .grid,
+        .two,
+        .three,
+        .four,
+        .flow,
+        .flow-wide,
+        .mock-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .flow::before {
+          display: none;
+        }
+
+        .card,
+        .node,
+        .flow-wide .node {
+          min-height: 0;
+        }
+
+        .screen {
+          min-height: 0;
+          margin-top: 16px;
+        }
+
+        .hero-art {
+          display: none;
+        }
+
+        .footer {
+          position: static;
+          margin-top: 24px;
+          padding: 0 18px 18px;
+        }
+
+        .nav {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck" id="deck" aria-label="TradeLock pitch deck">
+      <section class="slide">
+        <article class="sheet">
+          <div class="hero-art" aria-hidden="true"></div>
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>TradeLock</div>
+            <h1>Trust infrastructure for cross-border B2B escrow.</h1>
+            <p class="lead">
+              TradeLock turns escrow from a static demo into a live operation: managed wallets, Arbitrum Sepolia contracts, proof uploads, dispute mapping, and a judge-ready dashboard.
+            </p>
+            <div class="hero-row">
+              <div class="pill-row">
+                <span class="pill">Arbitrum Sepolia</span>
+                <span class="pill">Escrow + tUSD</span>
+                <span class="pill">QStash automation</span>
+                <span class="pill">Supabase + Redis</span>
+                <span class="pill">Pinata/IPFS proofs</span>
+              </div>
+              <p class="mini">Live app: tradelock-pi.vercel.app</p>
+            </div>
+          </div>
+          <div class="footer"><span>TradeLock</span><span class="slide-no">01 / 09</span></div>
+        </article>
+      </section>
+
+      <section class="slide">
+        <article class="sheet">
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>The problem</div>
+            <h2>International trade still fails at the moment trust matters most.</h2>
+            <div class="grid three" style="margin-top: 34px">
+              <div class="card">
+                <strong>Buyers fear paying too early</strong>
+                <span>They need proof that goods, inspection, or shipment milestones are real before funds move.</span>
+              </div>
+              <div class="card">
+                <strong>Sellers fear shipping too early</strong>
+                <span>They need confidence that payment is locked and settlement cannot be quietly walked back.</span>
+              </div>
+              <div class="card">
+                <strong>Arbitrators lack evidence context</strong>
+                <span>When disputes happen, chats and screenshots are not enough for a clean review path.</span>
+              </div>
+            </div>
+            <div class="split">
+              <div>
+                <p class="lead">
+                  The gap is not only escrow. The gap is operational visibility: who funded, who uploaded proof, what evidence exists, where funds are frozen, and which on-chain event proves it.
+                </p>
+              </div>
+              <div class="chart">
+                <svg viewBox="0 0 600 180" role="img" aria-label="Trust gap chart">
+                  <path d="M30 134 C116 124 140 92 206 108 C276 126 300 50 354 66 C426 88 450 36 572 30" fill="none" stroke="#22d3ee" stroke-width="5" stroke-linecap="round" />
+                  <path d="M30 134 C116 124 140 92 206 108 C276 126 300 50 354 66 C426 88 450 36 572 30 L572 180 L30 180 Z" fill="rgba(34,211,238,0.12)" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="footer"><span>Problem</span><span class="slide-no">02 / 09</span></div>
+        </article>
+      </section>
+
+      <section class="slide">
+        <article class="sheet">
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>The solution</div>
+            <h2>A live escrow workspace with proof, custody, and arbitration built in.</h2>
+            <div class="flow">
+              <div class="node" data-step="1">
+                <strong>Create deal</strong>
+                <span class="mini">Buyer and seller are mapped to known company profiles and wallets.</span>
+              </div>
+              <div class="node" data-step="2">
+                <strong>Fund escrow</strong>
+                <span class="mini">tUSD is approved and locked through the escrow contract path.</span>
+              </div>
+              <div class="node" data-step="3">
+                <strong>Upload proof</strong>
+                <span class="mini">Shipment, inspection, or milestone evidence is pinned to IPFS.</span>
+              </div>
+              <div class="node" data-step="4">
+                <strong>Release or dispute</strong>
+                <span class="mini">Funds settle to seller or remain frozen for structured review.</span>
+              </div>
+            </div>
+            <div class="grid four" style="margin-top: 28px">
+              <div class="card metric"><span class="mini">Managed wallets</span><span class="value">20</span><span>buyer, seller, arbitrator pool</span></div>
+              <div class="card metric"><span class="mini">Core asset</span><span class="value">tUSD</span><span>test settlement token</span></div>
+              <div class="card metric"><span class="mini">Automation</span><span class="value">24/7</span><span>QStash scheduled activity</span></div>
+              <div class="card metric"><span class="mini">Evidence</span><span class="value">IPFS</span><span>Pinata proof storage</span></div>
+            </div>
+          </div>
+          <div class="footer"><span>Solution</span><span class="slide-no">03 / 09</span></div>
+        </article>
+      </section>
+
+      <section class="slide">
+        <article class="sheet">
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>Architecture</div>
+            <h2>The system runs as a connected custody, state, proof, and contract loop.</h2>
+            <div class="flow flow-wide">
+              <div class="node" data-step="A"><strong>QStash</strong><span class="mini">Schedules activity and daily user growth.</span></div>
+              <div class="node" data-step="B"><strong>Custodial Engine</strong><span class="mini">Funds and orchestrates managed wallet flows.</span></div>
+              <div class="node" data-step="C"><strong>Redis</strong><span class="mini">Fast custody registry and live cache.</span></div>
+              <div class="node" data-step="D"><strong>Supabase</strong><span class="mini">Deals, disputes, audit events, settings.</span></div>
+              <div class="node" data-step="E"><strong>Pinata/IPFS</strong><span class="mini">Proof file persistence and review links.</span></div>
+              <div class="node" data-step="F"><strong>Contracts</strong><span class="mini">Escrow and tUSD settlement on Arbitrum Sepolia.</span></div>
+            </div>
+            <p class="lead">
+              The dashboard reads from the same state path used by automation, so reviewers see changing custody activity, updated deals, and dispute-ready evidence instead of mock-only rows.
+            </p>
+          </div>
+          <div class="footer"><span>System flow</span><span class="slide-no">04 / 09</span></div>
+        </article>
+      </section>
+
+      <section class="slide">
+        <article class="sheet">
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>Judge Mode</div>
+            <h2>A guided review surface so judges can verify claims fast.</h2>
+            <div class="split">
+              <div>
+                <div class="grid" style="gap: 12px">
+                  <div class="card">
+                    <strong>Demo checklist</strong>
+                    <span>Dashboard, Deals, Disputes, Audit Trail, Counterparties, and Settings are mapped into one review path.</span>
+                  </div>
+                  <div class="card">
+                    <strong>Counterparty mapping</strong>
+                    <span>Companies, roles, countries, wallets, trust scores, and deal counts are visible in one table.</span>
+                  </div>
+                  <div class="card">
+                    <strong>Evidence trail</strong>
+                    <span>Latest deal, proof hash, transaction hash, open disputes, and service health are surfaced immediately.</span>
+                  </div>
+                </div>
+              </div>
+              <div class="screen">
+                <div class="browser-bar"><i></i><i></i><i></i><span class="mini">/?screen=judge</span></div>
+                <div class="mock-ui">
+                  <div class="mock-hero">
+                    <div class="kicker"><span class="dot"></span>Hackathon review cockpit</div>
+                    <h3 style="margin-top: 14px">Everything judges need in one place.</h3>
+                    <p class="mini" style="margin-top: 8px">Live state, counterparties, disputes, proof trail, architecture, and deck links.</p>
+                  </div>
+                  <div class="mock-grid" style="margin-top: 12px">
+                    <div class="card metric"><span class="mini">Managed wallets</span><span class="value" style="font-size: 26px">20</span></div>
+                    <div class="card metric"><span class="mini">Open disputes</span><span class="value" style="font-size: 26px">Live</span></div>
+                  </div>
+                  <div class="mock-line"></div>
+                  <div class="mock-line" style="width: 76%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="footer"><span>Judge UX</span><span class="slide-no">05 / 09</span></div>
+        </article>
+      </section>
+
+      <section class="slide">
+        <article class="sheet">
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>Dispute and proof model</div>
+            <h2>Arbitration is mapped before conflict becomes chaos.</h2>
+            <div class="grid two" style="margin-top: 28px">
+              <div class="card">
+                <strong>Deal-linked disputes</strong>
+                <span>Every dispute references a deal ID, buyer, seller, amount, evidence status, update time, and transaction hash.</span>
+              </div>
+              <div class="card">
+                <strong>Frozen value visibility</strong>
+                <span>Open disputes show funds that remain frozen in escrow until review is resolved.</span>
+              </div>
+              <div class="card">
+                <strong>Proof files</strong>
+                <span>IPFS-backed evidence such as photos, inspection notes, manifests, and completion certificates can be attached to audit events.</span>
+              </div>
+              <div class="card">
+                <strong>Audit trail</strong>
+                <span>Deal created, deposit funded, proof uploaded, proof verified, released, and dispute events stay searchable and exportable.</span>
+              </div>
+            </div>
+            <div class="flow" style="grid-template-columns: repeat(4, 1fr)">
+              <div class="node" data-step="1"><strong>Issue raised</strong><span class="mini">Buyer or seller opens dispute.</span></div>
+              <div class="node" data-step="2"><strong>Funds frozen</strong><span class="mini">Escrow state prevents premature release.</span></div>
+              <div class="node" data-step="3"><strong>Evidence reviewed</strong><span class="mini">Files, proof hash, and tx context are inspected.</span></div>
+              <div class="node" data-step="4"><strong>Resolution path</strong><span class="mini">Release, escalation, or archive can be reasoned about cleanly.</span></div>
+            </div>
+          </div>
+          <div class="footer"><span>Arbitration</span><span class="slide-no">06 / 09</span></div>
+        </article>
+      </section>
+
+      <section class="slide">
+        <article class="sheet">
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>Automation layer</div>
+            <h2>The app keeps moving even when no one clicks the demo.</h2>
+            <div class="grid three" style="margin-top: 34px">
+              <div class="card">
+                <strong>Recurring market activity</strong>
+                <span>QStash calls /api/cron/activity to simulate active B2B escrow flow.</span>
+              </div>
+              <div class="card">
+                <strong>Daily user growth</strong>
+                <span>/api/cron/daily-user adds managed wallet activity to make the network feel alive.</span>
+              </div>
+              <div class="card">
+                <strong>Live dashboard sync</strong>
+                <span>The UI refreshes app state, custody snapshot, and system health on a tight cadence.</span>
+              </div>
+            </div>
+            <div class="grid four" style="margin-top: 28px">
+              <div class="card metric"><span class="mini">Status</span><span class="value">Live</span><span>automation-ready app</span></div>
+              <div class="card metric"><span class="mini">Cache</span><span class="value">Redis</span><span>managed wallet state</span></div>
+              <div class="card metric"><span class="mini">Store</span><span class="value">SQL</span><span>Supabase app state</span></div>
+              <div class="card metric"><span class="mini">Network</span><span class="value">ARB</span><span>Sepolia testnet</span></div>
+            </div>
+          </div>
+          <div class="footer"><span>Live operations</span><span class="slide-no">07 / 09</span></div>
+        </article>
+      </section>
+
+      <section class="slide">
+        <article class="sheet">
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>Why it wins</div>
+            <h2>TradeLock looks and behaves like real escrow operations.</h2>
+            <div class="split">
+              <div>
+                <p class="lead">
+                  The product is strong because the UI, automation, and backend all tell the same story: escrow is not just a contract call. It is a workflow with counterparties, proof, evidence, auditability, and trust recovery.
+                </p>
+                <div class="grid" style="margin-top: 22px">
+                  <div class="card"><strong>Operational credibility</strong><span>Live custody state and recurring activity make the demo feel used, not staged.</span></div>
+                  <div class="card"><strong>Judge-friendly proof</strong><span>Judge Mode connects every claim to a screen and evidence source.</span></div>
+                  <div class="card"><strong>Portable architecture</strong><span>The same pattern can move from testnet tUSD to production settlement assets later.</span></div>
+                </div>
+              </div>
+              <div class="screen">
+                <div class="browser-bar"><i></i><i></i><i></i><span class="mini">TradeLock dashboard</span></div>
+                <div class="mock-ui">
+                  <div class="card" style="min-height: 320px">
+                    <div class="kicker"><span class="dot"></span>Selected deal</div>
+                    <h3 style="margin-top: 18px">Buyer -> Escrow -> Seller</h3>
+                    <p class="mini" style="margin-top: 10px">Milestone proof, IPFS hash, transaction hash, status, and dispute path are all visible.</p>
+                    <div class="chart">
+                      <svg viewBox="0 0 600 180">
+                        <path d="M36 132 C108 88 158 118 220 74 C286 28 332 88 398 48 C462 12 504 46 568 22" fill="none" stroke="#34d399" stroke-width="5" stroke-linecap="round" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="footer"><span>Positioning</span><span class="slide-no">08 / 09</span></div>
+        </article>
+      </section>
+
+      <section class="slide">
+        <article class="sheet">
+          <div class="inner">
+            <div class="kicker"><span class="dot"></span>Roadmap</div>
+            <h2>From testnet escrow cockpit to production trade rails.</h2>
+            <div class="grid three" style="margin-top: 34px">
+              <div class="card">
+                <strong>Phase 1: Hackathon proof</strong>
+                <span>Live Arbitrum Sepolia app, Judge Mode, proof uploads, disputes, automation, and managed wallet activity.</span>
+              </div>
+              <div class="card">
+                <strong>Phase 2: Production pilots</strong>
+                <span>Role-based access, richer evidence templates, importer/exporter onboarding, and contract hardening.</span>
+              </div>
+              <div class="card">
+                <strong>Phase 3: Trade network</strong>
+                <span>Multi-asset settlement, reputation graph, arbitration marketplace, and compliance-grade audit export.</span>
+              </div>
+            </div>
+            <div class="flow" style="margin-top: 34px">
+              <div class="node" data-step="1"><strong>Lock</strong><span class="mini">Buyer funds escrow.</span></div>
+              <div class="node" data-step="2"><strong>Prove</strong><span class="mini">Seller submits evidence.</span></div>
+              <div class="node" data-step="3"><strong>Review</strong><span class="mini">Judge or arbitrator inspects the trail.</span></div>
+              <div class="node" data-step="4"><strong>Settle</strong><span class="mini">Funds release or remain protected.</span></div>
+            </div>
+            <p class="lead">
+              TradeLock is the credible middle layer for global B2B trust: simple enough to demo, structured enough to become real infrastructure.
+            </p>
+          </div>
+          <div class="footer"><span>Next steps</span><span class="slide-no">09 / 09</span></div>
+        </article>
+      </section>
+    </main>
+
+    <nav class="nav" aria-label="Pitch deck navigation">
+      <button type="button" id="prev">Previous</button>
+      <button type="button" id="next">Next</button>
+      <button type="button" id="print">Print A4</button>
+    </nav>
+
+    <script>
+      const deck = document.getElementById("deck");
+      const slides = Array.from(document.querySelectorAll(".slide"));
+      let index = 0;
+
+      function go(delta) {
+        index = Math.max(0, Math.min(slides.length - 1, index + delta));
+        slides[index].scrollIntoView({ behavior: "smooth", inline: "start" });
+      }
+
+      document.getElementById("prev").addEventListener("click", () => go(-1));
+      document.getElementById("next").addEventListener("click", () => go(1));
+      document.getElementById("print").addEventListener("click", () => window.print());
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown") go(1);
+        if (event.key === "ArrowLeft" || event.key === "PageUp") go(-1);
+      });
+      deck.addEventListener(
+        "scroll",
+        () => {
+          const nearest = Math.round(deck.scrollLeft / window.innerWidth);
+          index = Math.max(0, Math.min(slides.length - 1, nearest));
+        },
+        { passive: true },
+      );
+    </script>
+  </body>
+</html>

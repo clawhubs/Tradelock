@@ -8,6 +8,7 @@ import {
   FileSearch2,
   LayoutGrid,
   Plus,
+  Scale,
   Search,
   Settings2,
   ShieldAlert,
@@ -27,6 +28,7 @@ type CommandItem = {
 };
 
 const baseCommands: CommandItem[] = [
+  { label: "Judge Mode", description: "Guided hackathon review map", icon: Scale, screen: "judge", category: "Navigation" },
   { label: "Dashboard", description: "Global escrow overview", icon: LayoutGrid, screen: "dashboard", category: "Navigation" },
   { label: "Deals", description: "Manage all escrow agreements", icon: FileBadge2, screen: "deals", category: "Navigation" },
   { label: "Disputes", description: "Resolve escrow conflicts", icon: ShieldAlert, screen: "disputes", category: "Navigation" },

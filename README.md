@@ -69,15 +69,15 @@ TradeLock provides a live escrow workspace that combines:
 
 ```mermaid
 flowchart LR
-  Q[QStash Schedules] --> A[/api/cron/activity]
-  Q --> D[/api/cron/daily-user]
+  Q["QStash Schedules"] --> A["/api/cron/activity"]
+  Q --> D["/api/cron/daily-user"]
   A --> C[Custodial Engine]
   D --> C
   C --> R[(Upstash Redis)]
   C --> S[(Supabase)]
-  C --> P[Pinata / IPFS]
-  C --> E[Escrow + tUSD Contracts]
-  S --> UI[Next.js Dashboard]
+  C --> P["Pinata / IPFS"]
+  C --> E["Escrow + tUSD Contracts"]
+  S --> UI["Next.js Dashboard"]
   R --> UI
   E --> UI
 ```

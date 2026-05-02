@@ -25,6 +25,7 @@ import {
   MoreHorizontal,
   PanelLeft,
   Plus,
+  Scale,
   ScanSearch,
   Search,
   Settings2,
@@ -76,6 +77,7 @@ export const badgeClasses: Record<StatusKey, string> = {
 };
 
 export const navIcons: Record<ScreenKey, LucideIcon> = {
+  judge: Scale,
   dashboard: LayoutGrid,
   deals: FileBadge2,
   create: Plus,
@@ -96,6 +98,10 @@ export const toneIcons: Record<ToneKey, LucideIcon> = {
 };
 
 export const screenMeta: Record<ScreenKey, { title: string; description: string }> = {
+  judge: {
+    title: "Judge Mode",
+    description: "A guided review map for demo flow, wallets, disputes, proofs, and architecture.",
+  },
   dashboard: {
     title: "Global B2B Escrow Dashboard",
     description: "Secure. Transparent. Gasless.",
@@ -339,7 +345,7 @@ export function StatGrid({
   );
 }
 
-export function BrandMark({ compact = false }: { compact?: boolean }) {
+export function BrandMark({ compact = false, labelClassName = "" }: { compact?: boolean; labelClassName?: string }) {
   const frameSize = compact ? "h-9 w-9 rounded-[11px]" : "h-10 w-10 rounded-[11px]";
   const textSize = compact ? "text-[1.18rem]" : "text-[1.85rem]";
 
@@ -352,7 +358,7 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
         <div className="absolute left-[25px] top-[11px] h-[18px] w-[6px] -skew-x-[20deg] rounded-full bg-[#2da8ff]" />
         <div className="absolute left-[18px] top-[22px] h-[10px] w-[5px] -skew-x-[20deg] rounded-full bg-[#2da8ff]" />
       </div>
-      <div className={`display-font font-semibold tracking-tight text-white ${textSize}`}>TradeLock</div>
+      <div className={`display-font font-semibold tracking-tight text-white ${textSize} ${labelClassName}`}>TradeLock</div>
     </div>
   );
 }
@@ -1060,25 +1066,38 @@ export function MobileTopBar({
   onConnectWallet,
   onSwitchWalletNetwork,
   onOpenCreateDeal,
+  onOpenNav,
 }: {
   walletState: WalletState;
   isWalletBusy: boolean;
   onConnectWallet: () => void;
   onSwitchWalletNetwork: () => void;
   onOpenCreateDeal?: () => void;
+  onOpenNav?: () => void;
 }) {
   const { custodySnapshot } = useTradeLockData();
   const notificationCount = custodySnapshot?.recentActivity.length ?? 0;
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-white/[0.07] bg-white/[0.01] px-4 py-3.5 backdrop-blur-sm">
-      <BrandMark compact />
+    <div className="flex items-center justify-between gap-2 border-b border-white/[0.07] bg-white/[0.01] px-3 py-3.5 backdrop-blur-sm">
+      <div className="flex min-w-0 items-center gap-2">
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={onOpenNav}
+          className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-slate-300 transition hover:bg-white/[0.055] hover:text-white"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </button>
+        <BrandMark compact labelClassName="max-[430px]:hidden" />
+      </div>
       <div className="flex items-center gap-2">
         <button
           type="button"
+          aria-label="Create deal"
           onClick={onOpenCreateDeal}
-          className="rounded-xl border border-blue-400/30 bg-blue-500/10 px-3 py-2 text-[10px] font-semibold text-blue-200"
+          className="rounded-xl border border-blue-400/30 bg-blue-500/10 p-2 text-blue-200"
         >
-          Create
+          <Plus className="h-4 w-4" />
         </button>
         {!walletState.isConnected ? (
           <button
@@ -1103,9 +1122,8 @@ export function MobileTopBar({
             {walletState.shortAddress}
           </div>
         )}
-        <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[9px] font-semibold tracking-widest text-emerald-300">
+        <div aria-label="Live status" className="flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2 text-[9px] font-semibold tracking-widest text-emerald-300">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-          LIVE
         </div>
         <button type="button" aria-label="Notifications" className="relative rounded-xl border border-white/10 bg-white/[0.03] p-2 text-slate-300">
           <Bell className="h-4 w-4" />
@@ -1124,9 +1142,9 @@ export function MobileBottomNav({
   setActiveScreen: (s: ScreenKey) => void;
 }) {
   const items = [
+    { key: "judge" as ScreenKey, label: "Judge", icon: Scale },
     { key: "dashboard" as ScreenKey, label: "Home", icon: LayoutGrid },
     { key: "deals" as ScreenKey, label: "Deals", icon: FileBadge2 },
-    { key: "create" as ScreenKey, label: "Create", icon: Plus },
     { key: "disputes" as ScreenKey, label: "Alerts", icon: ShieldAlert },
     { key: "settings" as ScreenKey, label: "Profile", icon: User },
   ];

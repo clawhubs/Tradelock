@@ -20,6 +20,7 @@ import { SplashScreen } from "@/components/splash-screen";
 import { CommandPalette } from "@/components/command-palette";
 import { TradeLockDataProvider } from "@/components/tradelock-data-provider";
 import { DashboardDesktopScreen, DashboardMobileScreen } from "@/components/screens/dashboard-screen";
+import { JudgeDesktopScreen, JudgeMobileScreen } from "@/components/screens/judge-screen";
 import { DealsDesktopScreen, DealsMobileScreen } from "@/components/screens/deals-screen";
 import { CreateDesktopScreen, CreateMobileScreen } from "@/components/screens/create-screen";
 import { DisputesDesktopScreen, DisputesMobileScreen } from "@/components/screens/disputes-screen";
@@ -78,6 +79,7 @@ function parseScreenFromUrl(): ScreenKey {
   const screen = new URLSearchParams(window.location.search).get("screen");
 
   if (
+    screen === "judge" ||
     screen === "dashboard" ||
     screen === "deals" ||
     screen === "create" ||
@@ -1109,6 +1111,14 @@ function TradeLockShell() {
           onOpenSearch={() => setCommandOpen(true)}
           onOpenCreateDeal={() => setActiveScreen("create")}
         >
+          {activeScreen === "judge" && (
+            <JudgeDesktopScreen
+              onOpenDashboard={() => setActiveScreen("dashboard")}
+              onOpenDisputes={() => setActiveScreen("disputes")}
+              onOpenAudit={() => setActiveScreen("audit")}
+              onOpenCounterparties={() => setActiveScreen("counterparties")}
+            />
+          )}
           {activeScreen === "dashboard" && selectedDeal && (
             <DashboardDesktopScreen
               selectedDeal={selectedDeal}
@@ -1149,6 +1159,14 @@ function TradeLockShell() {
           onSwitchWalletNetwork={() => void switchWalletNetwork()}
           onOpenCreateDeal={() => setActiveScreen("create")}
         >
+          {activeScreen === "judge" && (
+            <JudgeMobileScreen
+              onOpenDashboard={() => setActiveScreen("dashboard")}
+              onOpenDisputes={() => setActiveScreen("disputes")}
+              onOpenAudit={() => setActiveScreen("audit")}
+              onOpenCounterparties={() => setActiveScreen("counterparties")}
+            />
+          )}
           {activeScreen === "dashboard" && selectedDeal && (
             <DashboardMobileScreen
               selectedDeal={selectedDeal}

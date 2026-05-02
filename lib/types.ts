@@ -1,4 +1,5 @@
 export type ScreenKey =
+  | "judge"
   | "dashboard"
   | "deals"
   | "create"

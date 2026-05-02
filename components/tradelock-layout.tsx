@@ -181,6 +181,7 @@ export function MobileLayout({
             onConnectWallet={onConnectWallet}
             onSwitchWalletNetwork={onSwitchWalletNetwork}
             onOpenCreateDeal={onOpenCreateDeal}
+            onOpenNav={() => setNavOpen(true)}
           />
           <TxTicker items={tickerItems} />
           <AnimatePresence mode="wait">
