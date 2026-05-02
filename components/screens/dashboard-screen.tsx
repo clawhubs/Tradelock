@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { geoMercator, geoPath, geoGraticule } from "d3-geo";
+import { feature } from "topojson-client";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -84,60 +86,170 @@ function AnimatedValue({ text }: { text: string }) {
   return <>{displayed}</>;
 }
 
-function WorldConnections() {
-  const cities = [
-    { name: "Singapore", x: 76, y: 58 },
-    { name: "Dubai", x: 62, y: 45 },
-    { name: "Shenzhen", x: 79, y: 42 },
-    { name: "Frankfurt", x: 51.5, y: 28 },
-    { name: "New York", x: 23, y: 33 },
-    { name: "Seoul", x: 82, y: 36 },
-  ];
-  const connections = [
-    { from: 0, to: 1, color: "#3b82f6", dur: "3s" },
-    { from: 0, to: 2, color: "#10b981", dur: "3.5s" },
-    { from: 1, to: 3, color: "#8b5cf6", dur: "4s" },
-    { from: 2, to: 3, color: "#06b6d4", dur: "2.8s" },
-    { from: 3, to: 4, color: "#f59e0b", dur: "3.8s" },
-    { from: 5, to: 3, color: "#6366f1", dur: "3.2s" },
-  ];
-  function arc(c1: (typeof cities)[0], c2: (typeof cities)[0]) {
-    const mx = (c1.x + c2.x) / 2;
-    const my = (c1.y + c2.y) / 2 - Math.abs(c2.x - c1.x) * 0.22;
-    return `M ${c1.x} ${c1.y} Q ${mx} ${my} ${c2.x} ${c2.y}`;
-  }
+const MAP_W = 800;
+const MAP_H = 380;
+
+const LOCATION_COORDS: Record<string, [number, number]> = {
+  "Singapore": [103.8, 1.35], "UAE": [55.3, 25.2], "Dubai": [55.3, 25.2],
+  "Germany": [10.5, 51.2], "Frankfurt": [8.7, 50.1], "China": [104.2, 35.9],
+  "Shenzhen": [114.1, 22.5], "USA": [-98.5, 39.5], "New York": [-74, 40.7],
+  "UK": [-3, 54], "London": [-0.1, 51.5], "Japan": [138, 36.2], "Tokyo": [139.7, 35.7],
+  "South Korea": [127.5, 36.5], "Seoul": [126.9, 37.6], "Australia": [133.8, -25.3],
+  "Sydney": [151.2, -33.9], "India": [78.9, 20.6], "Mumbai": [72.8, 19.1],
+  "Brazil": [-51.9, -14.2], "France": [2.3, 48.9], "Paris": [2.3, 48.9],
+  "Netherlands": [5.3, 52.1], "Switzerland": [8.2, 46.8], "Indonesia": [106.8, -6.2],
+  "Thailand": [100.5, 13.8], "Malaysia": [109.5, 4.2], "Taiwan": [120.9, 23.7],
+  "Hong Kong": [114.2, 22.3], "Vietnam": [105.8, 21], "Canada": [-96.8, 56.1],
+  "Mexico": [-102.6, 23.6], "Turkey": [35.2, 38.9], "Russia": [105.3, 61.5],
+  "Saudi Arabia": [45.1, 23.9], "Philippines": [121.8, 12.9],
+};
+
+const ROUTE_COLORS = ["#f59e0b","#60a5fa","#34d399","#f472b6","#a78bfa","#22d3ee","#fb923c"];
+const ROUTE_DURS   = ["5s","6.5s","4.8s","7s","5.5s","6s","4.5s"];
+
+function makeProjection() {
+  return geoMercator().scale(MAP_W / (2 * Math.PI)).translate([MAP_W / 2, MAP_H / 2]);
+}
+
+function arcPath(from: [number, number], to: [number, number]) {
+  const [x1, y1] = from, [x2, y2] = to;
+  const cx = (x1 + x2) / 2;
+  const len = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  const cy = (y1 + y2) / 2 - len * 0.38;
+  return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+}
+
+function WorldMapSVG({ deals }: { deals: Deal[] }) {
+  const [countryPaths, setCountryPaths] = useState<string[]>([]);
+  const [graticulePath, setGraticulePath] = useState("");
+
+  useEffect(() => {
+    fetch("/countries-110m.json")
+      .then(r => r.json())
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((topo: any) => {
+        const proj = makeProjection();
+        const path = geoPath().projection(proj);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const countries = feature(topo, topo.objects.countries) as any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setCountryPaths(countries.features.map((f: any) => path(f) ?? ""));
+        setGraticulePath(path(geoGraticule()()) ?? "");
+      })
+      .catch(() => {});
+  }, []);
+
+  const routes = useMemo(() => {
+    const proj = makeProjection();
+    const seen = new Set<string>();
+    const result: { d: string; color: string; dur: string; from: string; to: string; fromFlag: string; toFlag: string }[] = [];
+    deals.forEach(deal => {
+      const fl = deal.buyerLocation ?? "", tl = deal.sellerLocation ?? "";
+      const key = `${fl}→${tl}`;
+      if (!seen.has(key) && LOCATION_COORDS[fl] && LOCATION_COORDS[tl]) {
+        seen.add(key);
+        const fromPt = proj(LOCATION_COORDS[fl])!;
+        const toPt   = proj(LOCATION_COORDS[tl])!;
+        const idx = result.length;
+        result.push({ d: arcPath(fromPt as [number,number], toPt as [number,number]), color: ROUTE_COLORS[idx % ROUTE_COLORS.length]!, dur: ROUTE_DURS[idx % ROUTE_DURS.length]!, from: fl, to: tl, fromFlag: getCountryFlag(fl), toFlag: getCountryFlag(tl) });
+      }
+    });
+    if (result.length === 0) {
+      const DEFAULT_ROUTES: [string, string][] = [
+        ["Singapore", "Dubai"], ["Shenzhen", "Frankfurt"], ["Frankfurt", "New York"],
+        ["Singapore", "Seoul"], ["Dubai", "London"], ["Mumbai", "Singapore"],
+      ];
+      DEFAULT_ROUTES.forEach(([from, to], idx) => {
+        const fromPt = proj(LOCATION_COORDS[from])!;
+        const toPt   = proj(LOCATION_COORDS[to])!;
+        result.push({ d: arcPath(fromPt as [number,number], toPt as [number,number]), color: ROUTE_COLORS[idx % ROUTE_COLORS.length]!, dur: ROUTE_DURS[idx % ROUTE_DURS.length]!, from, to, fromFlag: getCountryFlag(from), toFlag: getCountryFlag(to) });
+      });
+    }
+    return result;
+  }, [deals]);
+
+  const markers = useMemo(() => {
+    const proj = makeProjection();
+    const seen = new Set<string>();
+    routes.forEach(r => { seen.add(r.from); seen.add(r.to); });
+    return [...seen].flatMap(name => {
+      const coords = LOCATION_COORDS[name];
+      if (!coords) return [];
+      const pt = proj(coords);
+      return pt ? [{ name, pt: pt as [number, number] }] : [];
+    });
+  }, [routes]);
+
   return (
-    <Panel title="Cross-Border Deal Network" action="6 active corridors">
-      <div className="relative overflow-hidden rounded-[8px] bg-[linear-gradient(180deg,rgba(4,10,28,0.7),rgba(2,6,18,0.85))]" style={{ height: "130px" }}>
-        <div className="absolute inset-0 world-grid opacity-20" />
-        <svg viewBox="0 0 100 65" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 h-full w-full">
-          {connections.map(({ from, to, color, dur }, i) => {
-            const d = arc(cities[from], cities[to]);
-            const id = `arc-${i}`;
-            return (
-              <g key={i}>
-                <path id={id} d={d} fill="none" stroke={color} strokeWidth="0.2" strokeOpacity="0.22" />
-                <circle r="0.8" fill={color} fillOpacity="0.9">
-                  <animateMotion dur={dur} repeatCount="indefinite">
-                    <mpath href={`#${id}`} />
-                  </animateMotion>
-                </circle>
-              </g>
-            );
-          })}
-          {cities.map((city, i) => (
-            <g key={city.name}>
-              <circle cx={city.x} cy={city.y} r="2.5" fill="none" stroke="white" strokeWidth="0.18" strokeOpacity="0.12">
-                <animate attributeName="r" values="2.5;4.8;2.5" dur={`${2 + i * 0.35}s`} repeatCount="indefinite" />
-                <animate attributeName="stroke-opacity" values="0.12;0;0.12" dur={`${2 + i * 0.35}s`} repeatCount="indefinite" />
-              </circle>
-              <circle cx={city.x} cy={city.y} r="0.9" fill="white" fillOpacity="0.8" />
-            </g>
-          ))}
-        </svg>
-        <div className="absolute bottom-2 left-3 flex flex-wrap gap-3">
-          {cities.map((city) => (
-            <span key={city.name} className="text-[9px] font-medium tracking-widest text-slate-500">{city.name.toUpperCase()}</span>
+    <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} preserveAspectRatio="xMidYMid meet" className="absolute inset-0 h-full w-full" style={{ background: "linear-gradient(180deg,#020d2a 0%,#010818 100%)" }}>
+      <defs>
+        {routes.map((r, i) => <path key={`def-${i}`} id={`wmarc-${i}`} d={r.d} />)}
+        <filter id="wm-glow" x="-80%" y="-80%" width="260%" height="260%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="wm-dotglow" x="-100%" y="-100%" width="300%" height="300%">
+          <feGaussianBlur stdDeviation="6" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <radialGradient id="oceanGrad" cx="50%" cy="50%" r="60%">
+          <stop offset="0%" stopColor="#0a1f4a" />
+          <stop offset="100%" stopColor="#020a1c" />
+        </radialGradient>
+      </defs>
+      <rect width={MAP_W} height={MAP_H} fill="url(#oceanGrad)" />
+      {graticulePath && <path d={graticulePath} fill="none" stroke="rgba(100,160,255,0.07)" strokeWidth="0.6" />}
+      {countryPaths.map((d, i) => d && <path key={i} d={d} fill="#0f2d72" stroke="#1a4db8" strokeWidth="0.7" />)}
+      {routes.map((r, i) => <use key={`trail-${i}`} href={`#wmarc-${i}`} fill="none" stroke={r.color} strokeWidth="1.5" strokeOpacity="0.35" strokeDasharray="8 12" />)}
+      {routes.map((r, i) => (
+        <g key={`plane-${i}`} filter="url(#wm-glow)">
+          <polygon points="-10,-4.5 14,0 -10,4.5 -3,0" fill={r.color} fillOpacity="0.98">
+            <animateMotion dur={r.dur} repeatCount="indefinite" rotate="auto">
+              <mpath href={`#wmarc-${i}`} />
+            </animateMotion>
+          </polygon>
+        </g>
+      ))}
+      {routes.map((r, i) => (
+        <g key={`flag-${i}`}>
+          <animateMotion dur={r.dur} repeatCount="indefinite">
+            <mpath href={`#wmarc-${i}`} />
+          </animateMotion>
+          <text y="-14" textAnchor="middle" fontSize="13" style={{ userSelect: "none" }}>{r.fromFlag}</text>
+        </g>
+      ))}
+      {markers.map(({ name, pt }, i) => (
+        <g key={name} filter="url(#wm-dotglow)">
+          <circle cx={pt[0]} cy={pt[1]} r="18" fill="none" stroke="white" strokeWidth="0.8" strokeOpacity="0.12">
+            <animate attributeName="r" values="18;36;18" dur={`${2.4 + i * 0.35}s`} repeatCount="indefinite" />
+            <animate attributeName="stroke-opacity" values="0.12;0;0.12" dur={`${2.4 + i * 0.35}s`} repeatCount="indefinite" />
+          </circle>
+          <circle cx={pt[0]} cy={pt[1]} r="5" fill="white" fillOpacity="0.9" />
+          <circle cx={pt[0]} cy={pt[1]} r="3" fill="#93c5fd" fillOpacity="1" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function WorldDealMap({ deals }: { deals: Deal[] }) {
+  const routeCount = useMemo(() => {
+    const seen = new Set<string>();
+    deals.forEach(d => {
+      const key = `${d.buyerLocation ?? ""}→${d.sellerLocation ?? ""}`;
+      if (!seen.has(key) && LOCATION_COORDS[d.buyerLocation ?? ""] && LOCATION_COORDS[d.sellerLocation ?? ""]) seen.add(key);
+    });
+    return seen.size;
+  }, [deals]);
+  const displayCount = routeCount === 0 ? 6 : routeCount;
+  const corridorLabel = routeCount === 0 ? "live corridors" : "active corridors";
+  return (
+    <Panel title="Cross-Border Deal Network" action={`${displayCount} ${corridorLabel}`}>
+      <div className="relative overflow-hidden rounded-[8px]" style={{ height: "180px" }}>
+        <WorldMapSVG deals={deals} />
+        <div className="pointer-events-none absolute bottom-2 left-3 flex flex-wrap gap-2 pr-4">
+          {[...new Set(deals.flatMap(d => [d.buyerLocation, d.sellerLocation]).filter(Boolean))].slice(0, 8).map(loc => (
+            <span key={loc} className="text-[8px] font-medium tracking-widest text-slate-400/70">{(loc ?? "").toUpperCase()}</span>
           ))}
         </div>
       </div>
@@ -290,7 +402,7 @@ export function DashboardDesktopScreen({
         })}
       </div>
 
-      <WorldConnections />
+      <WorldDealMap deals={deals.slice(0, 8)} />
 
       <div className="grid gap-3 xl:items-start xl:grid-cols-[minmax(0,1fr)_390px]">
         <div className="space-y-3">
@@ -975,56 +1087,8 @@ export function DashboardMobileScreen({
           <div className="text-[13px] font-semibold text-white">Cross-Border Network</div>
           <span className="text-[9px] font-semibold tracking-widest text-blue-300">6 ACTIVE</span>
         </div>
-        <div className="relative h-[140px] overflow-hidden bg-[linear-gradient(180deg,rgba(4,10,28,0.6),rgba(2,6,18,0.8))]">
-          <div className="absolute inset-0 world-grid opacity-25" />
-          <svg viewBox="0 0 100 65" preserveAspectRatio="xMidYMid meet" className="absolute inset-0 h-full w-full">
-            {[
-              { from: { x: 76, y: 58 }, to: { x: 62, y: 45 }, color: "#3b82f6", dur: "3s" },
-              { from: { x: 76, y: 58 }, to: { x: 79, y: 42 }, color: "#10b981", dur: "3.5s" },
-              { from: { x: 62, y: 45 }, to: { x: 51.5, y: 28 }, color: "#8b5cf6", dur: "4s" },
-              { from: { x: 79, y: 42 }, to: { x: 51.5, y: 28 }, color: "#06b6d4", dur: "2.8s" },
-              { from: { x: 51.5, y: 28 }, to: { x: 23, y: 33 }, color: "#f59e0b", dur: "3.8s" },
-              { from: { x: 82, y: 36 }, to: { x: 51.5, y: 28 }, color: "#6366f1", dur: "3.2s" },
-            ].map(({ from, to, color, dur }, i) => {
-              const mx = (from.x + to.x) / 2;
-              const my = (from.y + to.y) / 2 - Math.abs(to.x - from.x) * 0.22;
-              const d = `M ${from.x} ${from.y} Q ${mx} ${my} ${to.x} ${to.y}`;
-              const id = `marc-${i}`;
-              return (
-                <g key={i}>
-                  <path id={id} d={d} fill="none" stroke={color} strokeWidth="0.22" strokeOpacity="0.25" />
-                  <circle r="0.85" fill={color} fillOpacity="0.9">
-                    <animateMotion dur={dur} repeatCount="indefinite">
-                      <mpath href={`#${id}`} />
-                    </animateMotion>
-                  </circle>
-                </g>
-              );
-            })}
-            {[
-              { name: "Singapore", x: 76, y: 58 },
-              { name: "Dubai", x: 62, y: 45 },
-              { name: "Shenzhen", x: 79, y: 42 },
-              { name: "Frankfurt", x: 51.5, y: 28 },
-              { name: "New York", x: 23, y: 33 },
-              { name: "Seoul", x: 82, y: 36 },
-            ].map((city, i) => (
-              <g key={city.name}>
-                <circle cx={city.x} cy={city.y} r="2.5" fill="none" stroke="white" strokeWidth="0.18" strokeOpacity="0.12">
-                  <animate attributeName="r" values="2.5;4.6;2.5" dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
-                  <animate attributeName="stroke-opacity" values="0.12;0;0.12" dur={`${2 + i * 0.3}s`} repeatCount="indefinite" />
-                </circle>
-                <circle cx={city.x} cy={city.y} r="0.95" fill="white" fillOpacity="0.85" />
-              </g>
-            ))}
-          </svg>
-          <div className="absolute bottom-2 left-3 flex flex-wrap gap-2 pr-3">
-            {["SINGAPORE", "DUBAI", "SHENZHEN", "FRANKFURT", "NEW YORK", "SEOUL"].map((name) => (
-              <span key={name} className="text-[8px] font-medium tracking-widest text-slate-500">
-                {name}
-              </span>
-            ))}
-          </div>
+        <div className="relative h-[160px] overflow-hidden">
+          <WorldMapSVG deals={recentDeals} />
         </div>
       </motion.div>
 

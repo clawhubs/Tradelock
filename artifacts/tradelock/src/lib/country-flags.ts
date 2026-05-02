@@ -87,7 +87,6 @@ function normalize(value?: string | null) {
 
 function toFlagEmoji(countryCode: string) {
   if (!/^[A-Z]{2}$/.test(countryCode)) return "🌐";
-
   return countryCode
     .split("")
     .map((char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
@@ -97,26 +96,17 @@ function toFlagEmoji(countryCode: string) {
 export function getCountryCode(...values: Array<string | null | undefined>) {
   for (const value of values) {
     const normalized = normalize(value);
-
     if (!normalized) continue;
     if (/^[a-z]{2}$/.test(normalized)) return normalized.toUpperCase();
-
     for (const [alias, countryCode] of LOCATION_ALIASES) {
-      if (normalized.includes(alias)) {
-        return countryCode;
-      }
+      if (normalized.includes(alias)) return countryCode;
     }
-
     const exact = LOCATION_FLAGS.get(normalized);
     if (exact) return exact;
-
     for (const [countryName, countryCode] of LOCATION_FLAGS.entries()) {
-      if (normalized.includes(countryName)) {
-        return countryCode;
-      }
+      if (normalized.includes(countryName)) return countryCode;
     }
   }
-
   return null;
 }
 
