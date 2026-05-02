@@ -63,8 +63,8 @@ const LOCATION_COORDS: Record<string, [number, number]> = {
   "Netherlands": [5.3, 52.1], "Switzerland": [8.2, 46.8], "Indonesia": [106.8, -6.2],
   "Thailand": [100.5, 13.8], "Malaysia": [109.5, 4.2], "Taiwan": [120.9, 23.7],
   "Hong Kong": [114.2, 22.3], "Vietnam": [105.8, 21], "Canada": [-96.8, 56.1],
-  "Mexico": [-102.6, 23.6], "Turkey": [35.2, 38.9], "Russia": [105.3, 61.5],
-  "Saudi Arabia": [45.1, 23.9], "Philippines": [121.8, 12.9],
+  "Mexico": [-102.6, 23.6], "Turkey": [35.2, 38.9], "Istanbul": [28.97, 41.01], "Ankara": [32.85, 39.93],
+  "Russia": [105.3, 61.5], "Saudi Arabia": [45.1, 23.9], "Philippines": [121.8, 12.9],
 };
 
 const ROUTE_COLORS = ["#f59e0b","#60a5fa","#34d399","#f472b6","#a78bfa","#22d3ee","#fb923c"];
