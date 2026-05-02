@@ -71,6 +71,73 @@ function formatAmount(amountRaw: string) {
   return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${settlementTokenSymbol}`;
 }
 
+function parseDisplayTimestamp(value?: string | null) {
+  if (!value || value === "N/A") {
+    return 0;
+  }
+
+  const timestamp = new Date(value).getTime();
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function compareText(a: string, b: string) {
+  return a.localeCompare(b, "en-US", { sensitivity: "base" });
+}
+
+function sortDealsByUpdated(deals: Deal[]) {
+  return [...deals].sort((a, b) => {
+    const byUpdated = parseDisplayTimestamp(b.updated) - parseDisplayTimestamp(a.updated);
+
+    if (byUpdated !== 0) {
+      return byUpdated;
+    }
+
+    return compareText(b.id, a.id);
+  });
+}
+
+function sortDisputesByUpdated(disputes: Dispute[]) {
+  return [...disputes].sort((a, b) => {
+    const byUpdated = parseDisplayTimestamp(b.updated) - parseDisplayTimestamp(a.updated);
+
+    if (byUpdated !== 0) {
+      return byUpdated;
+    }
+
+    return compareText(b.id, a.id);
+  });
+}
+
+function sortAuditEventsByTimestamp(events: AuditEvent[]) {
+  return [...events].sort((a, b) => {
+    const byTimestamp = parseDisplayTimestamp(b.timestamp) - parseDisplayTimestamp(a.timestamp);
+
+    if (byTimestamp !== 0) {
+      return byTimestamp;
+    }
+
+    return compareText(b.id, a.id);
+  });
+}
+
+function sortCounterpartiesByLastDeal(counterparties: Counterparty[]) {
+  return [...counterparties].sort((a, b) => {
+    const byLastDeal = parseDisplayTimestamp(b.lastDeal) - parseDisplayTimestamp(a.lastDeal);
+
+    if (byLastDeal !== 0) {
+      return byLastDeal;
+    }
+
+    const byDeals = b.totalDeals - a.totalDeals;
+
+    if (byDeals !== 0) {
+      return byDeals;
+    }
+
+    return compareText(a.company, b.company);
+  });
+}
+
 function buildCounterpartyEmail(label: string) {
   const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "");
   return `${slug.slice(0, 18)}@tradelock.demo`;
@@ -170,12 +237,16 @@ async function invalidateAppStateCache() {
   }
 }
 
+export async function resetAppStateCache() {
+  await invalidateAppStateCache();
+}
+
 function syncCounterparties(counterparties: Counterparty[], deals: Deal[]) {
   return counterparties.map((entry) => {
     const relatedDeals = deals.filter((deal) => deal.buyer === entry.company || deal.seller === entry.company);
     const totalVolume = relatedDeals.reduce((sum, deal) => sum + parseAmount(deal.amountRaw), 0);
     const latestDeal = [...relatedDeals].sort(
-      (a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime(),
+      (a, b) => parseDisplayTimestamp(b.updated) - parseDisplayTimestamp(a.updated),
     )[0];
 
     return {
@@ -356,23 +427,26 @@ export async function getAppState(): Promise<TradeLockAppState> {
   }
 
   const state = await readState();
-  const counterparties = syncCounterparties(state.counterparties, state.deals);
+  const deals = sortDealsByUpdated(state.deals);
+  const disputes = sortDisputesByUpdated(state.disputes);
+  const auditEvents = sortAuditEventsByTimestamp(state.auditEvents);
+  const counterparties = sortCounterpartiesByLastDeal(syncCounterparties(state.counterparties, deals));
   const appState: TradeLockAppState = {
     dealFilters,
     disputeFilters,
     auditFilters,
     counterpartyFilters,
-    deals: state.deals,
-    disputes: state.disputes,
-    auditEvents: state.auditEvents,
+    deals,
+    disputes,
+    auditEvents,
     counterparties,
-    overviewStats: buildOverviewStats(state.deals, state.disputes),
-    dealsStats: buildDealsStats(state.deals),
-    disputesStats: buildDisputeStats(state.disputes),
-    auditStats: buildAuditStats(state.auditEvents),
+    overviewStats: buildOverviewStats(deals, disputes),
+    dealsStats: buildDealsStats(deals),
+    disputesStats: buildDisputeStats(disputes),
+    auditStats: buildAuditStats(auditEvents),
     counterpartyStats: buildCounterpartyStats(counterparties),
     createSteps,
-    createFields: buildCreateFields(counterparties, state.deals),
+    createFields: buildCreateFields(counterparties, deals),
     settings: state.settings,
   };
 
@@ -383,7 +457,7 @@ export async function getAppState(): Promise<TradeLockAppState> {
 
 export async function listDeals() {
   const state = await readState();
-  return state.deals;
+  return sortDealsByUpdated(state.deals);
 }
 
 export async function getDeal(id: string) {
@@ -469,7 +543,7 @@ export async function updateDeal(id: string, patch: Partial<Deal>) {
 
 export async function listDisputes() {
   const state = await readState();
-  return state.disputes;
+  return sortDisputesByUpdated(state.disputes);
 }
 
 export async function createDispute(input: Partial<Dispute>) {
@@ -497,7 +571,7 @@ export async function createDispute(input: Partial<Dispute>) {
 
 export async function listAuditEvents() {
   const state = await readState();
-  return state.auditEvents;
+  return sortAuditEventsByTimestamp(state.auditEvents);
 }
 
 export async function createAuditEvent(input: Partial<AuditEvent>) {
@@ -525,7 +599,7 @@ export async function createAuditEvent(input: Partial<AuditEvent>) {
 
 export async function listCounterparties() {
   const state = await readState();
-  return syncCounterparties(state.counterparties, state.deals);
+  return sortCounterpartiesByLastDeal(syncCounterparties(state.counterparties, sortDealsByUpdated(state.deals)));
 }
 
 export async function upsertCounterparty(input: Counterparty) {

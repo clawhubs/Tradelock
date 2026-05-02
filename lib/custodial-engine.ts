@@ -13,6 +13,7 @@ import {
   createAuditEvent,
   createDeal as createBackendDeal,
   createDispute,
+  resetAppStateCache,
   updateDeal,
   updateSettings,
   upsertCounterparties,
@@ -1282,6 +1283,7 @@ export async function rebuildLiveWorkspaceState() {
     throw new Error("Could not replace Supabase state with live custody data.");
   }
 
+  await resetAppStateCache();
   await syncSettingsSummary(registry);
   appendActivity(registry, {
     type: "bootstrap",
