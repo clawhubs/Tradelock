@@ -1,0 +1,13 @@
+.next
+node_modules
+.env.local
+test-results
+Plan/
+supabase/
+playwright.config.ts
+arbitrum-arb-logo.png
+playwright-report/
+coverage/
+data/
+*.log
+.DS_Store
