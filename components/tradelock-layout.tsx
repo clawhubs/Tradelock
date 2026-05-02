@@ -36,11 +36,11 @@ export function DesktopLayout({
   const isDashboard = activeScreen === "dashboard";
 
   return (
-    <section className="hidden xl:block">
-      <div className="w-full px-[3px] py-[3px]">
-        <div className="glass-panel soft-glow relative overflow-hidden rounded-[22px] border border-white/[0.1]">
-          <div className="grid min-h-[820px] grid-cols-[238px_minmax(0,1fr)]">
-            <aside className="flex flex-col border-r border-white/[0.07] bg-[linear-gradient(160deg,rgba(6,18,44,0.88)_0%,rgba(4,12,30,0.95)_100%)] backdrop-blur-2xl px-4 py-4">
+    <section className="hidden h-screen xl:block">
+      <div className="h-full w-full px-[3px] py-[3px]">
+        <div className="glass-panel soft-glow relative h-full overflow-hidden rounded-[22px] border border-white/[0.1]">
+          <div className="grid h-full min-h-0 grid-cols-[238px_minmax(0,1fr)]">
+            <aside className="flex h-full min-h-0 flex-col border-r border-white/[0.07] bg-[linear-gradient(160deg,rgba(6,18,44,0.88)_0%,rgba(4,12,30,0.95)_100%)] backdrop-blur-2xl px-4 py-4">
               <BrandMark />
               <nav className="mt-6 space-y-1.5">
               {navItems.map((item) => {
@@ -65,7 +65,7 @@ export function DesktopLayout({
               })}
               </nav>
 
-              <div className="mt-auto space-y-2.5 pt-6">
+              <div className="mt-auto space-y-2.5 border-t border-white/[0.07] pt-6">
                 <MiniSidebarCard
                   title="Network"
                   value={walletState.chainName}
@@ -84,7 +84,7 @@ export function DesktopLayout({
               </div>
             </aside>
 
-            <div className="relative min-w-0 bg-[linear-gradient(160deg,rgba(5,14,38,0.38)_0%,rgba(3,9,24,0.48)_100%)]">
+            <div className="relative flex h-full min-w-0 min-h-0 flex-col overflow-hidden bg-[linear-gradient(160deg,rgba(5,14,38,0.38)_0%,rgba(3,9,24,0.48)_100%)]">
               <div className="pointer-events-none absolute -top-24 right-8 h-80 w-80 rounded-full bg-blue-600/[0.04] blur-3xl" />
               <div className="pointer-events-none absolute bottom-0 right-0 h-96 w-96 rounded-full bg-violet-600/[0.028] blur-3xl" />
               <TopBar
@@ -97,32 +97,34 @@ export function DesktopLayout({
                 onSwitchWalletNetwork={onSwitchWalletNetwork}
               />
               <TxTicker items={tickerItems} />
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeScreen}
-                  initial={{ opacity: 0, y: 14 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{ duration: 0.22, ease: "easeOut" }}
-                  className="space-y-4 px-5 pb-5 pt-3"
-                >
-                  <div>
-                    <h1
-                      className={`display-font font-semibold ${
-                        isDashboard
-                          ? "gradient-text text-[39px] leading-[1.08] tracking-[-0.04em]"
-                          : "text-white text-[31px] leading-[1.1] tracking-[-0.03em]"
-                      }`}
-                    >
-                      {screenMeta[activeScreen].title}
-                    </h1>
-                    <p className={`mt-1 ${isDashboard ? "text-[14px]" : "text-[13px]"} text-slate-400/90`}>
-                      {screenMeta[activeScreen].description}
-                    </p>
-                  </div>
-                  {children}
-                </motion.div>
-              </AnimatePresence>
+              <div className="data-scroll relative min-h-0 flex-1 overflow-y-auto">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeScreen}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="space-y-4 px-5 pb-5 pt-3"
+                  >
+                    <div>
+                      <h1
+                        className={`display-font font-semibold ${
+                          isDashboard
+                            ? "gradient-text text-[39px] leading-[1.08] tracking-[-0.04em]"
+                            : "text-white text-[31px] leading-[1.1] tracking-[-0.03em]"
+                        }`}
+                      >
+                        {screenMeta[activeScreen].title}
+                      </h1>
+                      <p className={`mt-1 ${isDashboard ? "text-[14px]" : "text-[13px]"} text-slate-400/90`}>
+                        {screenMeta[activeScreen].description}
+                      </p>
+                    </div>
+                    {children}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
             </div>
           </div>
         </div>
