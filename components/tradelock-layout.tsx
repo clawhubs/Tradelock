@@ -72,7 +72,7 @@ export function DesktopLayout({
                   icon={Network}
                   dotColor={walletState.isCorrectNetwork ? "bg-emerald-400" : "bg-amber-400"}
                   subtitle={walletState.isCorrectNetwork ? "Ready for settlement" : "Switch wallet network"}
-                  useArbitrumLogo={walletState.isCorrectNetwork}
+                  useArbitrumLogo
                 />
                 <MiniSidebarCard
                   title="Account"

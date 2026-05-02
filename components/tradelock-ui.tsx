@@ -556,7 +556,7 @@ export function TopBar({
           <NotificationDropdown open={bellOpen} onClose={() => setBellOpen(false)} />
         </div>
         <TopPill icon={Globe2} label={walletState.shortAddress} />
-        <TopPill icon={Network} label={walletState.chainName} useArbitrumLogo={walletState.isCorrectNetwork} />
+        <TopPill icon={Network} label={walletState.chainName} useArbitrumLogo />
         {walletState.isConnected && (
           <TopPill icon={Wallet} label={`${walletState.settlementBalance} ${walletState.settlementSymbol}`} />
         )}
@@ -576,30 +576,17 @@ export function TopBar({
 export function ArbitrumBadge({ size = 18 }: { size?: number }) {
   return (
     <div
-      className="flex items-center justify-center overflow-hidden rounded-full bg-[#0a1830] ring-1 ring-white/10"
+      className="flex items-center justify-center overflow-hidden rounded-[6px] bg-[#0a1830] ring-1 ring-white/10"
       style={{ width: size, height: size }}
       aria-label="Arbitrum"
       title="Arbitrum"
     >
-      <svg
-        viewBox="0 0 64 64"
-        width={size}
-        height={size}
+      <img
+        src="/arbitrum-network-logo.png"
+        alt=""
         aria-hidden="true"
-        className="block"
-      >
-        <circle cx="32" cy="32" r="32" fill="#0A1830" />
-        <path
-          d="M32 10 48.5 19.5v25L32 54 15.5 44.5v-25L32 10Z"
-          fill="#172B4D"
-          stroke="#7AA2F7"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-        <path d="M26.5 43.5 20 25h5.3l6.5 18.5-5.3 0Z" fill="#FFFFFF" />
-        <path d="M33.8 20h5.3l8 23.5h-5.3L33.8 20Z" fill="#2DA8FF" />
-        <path d="M30.3 20h5.3l8 23.5h-5.3L30.3 20Z" fill="#8BD6FF" />
-      </svg>
+        className="h-[84%] w-[84%] object-contain"
+      />
     </div>
   );
 }
@@ -1038,7 +1025,7 @@ export function MobileDrawer({
             icon={Network}
             dotColor={walletState.isCorrectNetwork ? "bg-emerald-400" : "bg-amber-400"}
             subtitle={walletState.isCorrectNetwork ? "Ready for settlement" : "Switch wallet network"}
-            useArbitrumLogo={walletState.isCorrectNetwork}
+            useArbitrumLogo
           />
           <MiniSidebarCard
             title="Account"

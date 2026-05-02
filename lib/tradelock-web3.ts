@@ -94,7 +94,7 @@ export function resolveChainName(chainId?: number) {
   }
 
   if (chainId === 11155111) {
-    return "Ethereum Sepolia";
+    return "Arbitrum Sepolia";
   }
 
   return `Chain ${chainId}`;

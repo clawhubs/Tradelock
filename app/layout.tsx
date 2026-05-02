@@ -16,6 +16,10 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: "TradeLock",
   description: "Global B2B escrow powered by Arbitrum and tUSD on Arbitrum Sepolia.",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
