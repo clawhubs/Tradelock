@@ -39,6 +39,7 @@ type DealInput = Partial<
 > & { id?: string };
 
 const appStateCacheKey = "tradelock:app-state:v1";
+const appTimeZone = "Asia/Jakarta";
 
 function parseAmount(value: string) {
   return Number(value.replace(/[^0-9.]/g, ""));
@@ -60,6 +61,7 @@ function formatTimestamp(date = new Date()) {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
+    timeZone: appTimeZone,
   })
     .format(date)
     .replace(",", "")
@@ -97,6 +99,16 @@ function parseAutoSequence(value?: string | null) {
 
   const sequence = Number.parseInt(encoded, 36);
   return Number.isNaN(sequence) ? 0 : sequence;
+}
+
+function formatAutoTimestamp(value?: string | null) {
+  const sequence = parseAutoSequence(value);
+
+  if (!sequence) {
+    return null;
+  }
+
+  return formatTimestamp(new Date(sequence));
 }
 
 function sortDealsByUpdated(deals: Deal[]) {
@@ -211,14 +223,17 @@ function normalizePersistedState(state: PersistedState): PersistedState {
     deals: state.deals.map((deal) => ({
       ...deal,
       amount: withSettlementTokenSymbol(deal.amount),
+      updated: formatAutoTimestamp(deal.id) ?? deal.updated,
     })),
     disputes: state.disputes.map((dispute) => ({
       ...dispute,
       amount: withSettlementTokenSymbol(dispute.amount),
+      updated: formatAutoTimestamp(dispute.dealId) ?? dispute.updated,
     })),
     auditEvents: state.auditEvents.map((event) => ({
       ...event,
       asset: withSettlementTokenSymbol(event.asset),
+      timestamp: formatAutoTimestamp(event.dealId) ?? event.timestamp,
     })),
   };
 }
