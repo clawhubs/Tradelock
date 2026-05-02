@@ -16,7 +16,7 @@ import type {
 } from "@/lib/types";
 import { getRedisClient } from "@/lib/services/redis";
 import { ensureSupabaseInitialized, getSupabaseStoreHealth, writeSupabaseState } from "@/lib/services/tradelock-supabase-store";
-import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
+import { formatSettlementTokenAmount, settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 import { createDefaultState, type PersistedState } from "@/lib/tradelock-default-state";
 
 type DealInput = Partial<
@@ -326,8 +326,8 @@ function buildOverviewStats(deals: Deal[], disputes: Dispute[]): StatCard[] {
 
   return [
     { label: "Active Deals", value: formatCount(activeDealsCount), change: "Across all current flows", tone: "blue" },
-    { label: "Escrow Volume", value: `${formatUsd(totalEscrowVolume)} ${settlementTokenSymbol}`, change: "Unified with deal list", tone: "green" },
-    { label: "Pending Release", value: `${formatUsd(pendingReleaseVolume)} ${settlementTokenSymbol}`, change: "Ready to settle", tone: "purple" },
+    { label: "Escrow Volume", value: formatSettlementTokenAmount(totalEscrowVolume), change: "Unified with deal list", tone: "green" },
+    { label: "Pending Release", value: formatSettlementTokenAmount(pendingReleaseVolume), change: "Ready to settle", tone: "purple" },
     { label: "Disputes Open", value: formatCount(disputesOpenCount), change: "Needs review", tone: "orange" },
   ];
 }
@@ -358,7 +358,7 @@ function buildDealsStats(deals: Deal[]): StatCard[] {
       change: "Escalated deals",
       tone: "red",
     },
-    { label: "Total Escrow Volume", value: `${formatUsd(totalEscrowVolume)} ${settlementTokenSymbol}`, change: "Same source as dashboard", tone: "blue" },
+    { label: "Total Escrow Volume", value: formatSettlementTokenAmount(totalEscrowVolume), change: "Same source as dashboard", tone: "blue" },
   ];
 }
 
@@ -385,7 +385,7 @@ function buildDisputeStats(disputes: Dispute[]): StatCard[] {
     },
     {
       label: "Funds Frozen",
-      value: `${formatUsd(disputes.filter((dispute) => dispute.status !== "Resolved").reduce((sum, dispute) => sum + parseAmount(dispute.amount), 0))} ${settlementTokenSymbol}`,
+      value: formatSettlementTokenAmount(disputes.filter((dispute) => dispute.status !== "Resolved").reduce((sum, dispute) => sum + parseAmount(dispute.amount), 0)),
       change: "Linked to open disputes",
       tone: "purple",
     },

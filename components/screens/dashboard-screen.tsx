@@ -25,7 +25,7 @@ import {
   StatusBadge,
 } from "@/components/tradelock-ui";
 import { useToast } from "@/components/toast-provider";
-import { settlementTokenSymbol } from "@/lib/settlement-token";
+import { formatSettlementTokenAmount, settlementTokenSymbol } from "@/lib/settlement-token";
 import { getTxExplorerUrl, shortenHash } from "@/lib/explorer";
 
 function flagFor(name: string) {
@@ -40,14 +40,10 @@ function parseAmount(value: string) {
   return Number(value.replace(/[^0-9.]/g, ""));
 }
 
-function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function compactUsd(value: number): string {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
-  return `$${value.toFixed(0)}`;
+function compactTokenAmount(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M ${settlementTokenSymbol}`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K ${settlementTokenSymbol}`;
+  return `${value.toFixed(0)} ${settlementTokenSymbol}`;
 }
 
 function compactTimestamp(value: string) {
@@ -469,7 +465,7 @@ export function DashboardDesktopScreen({
                 transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
               >
                 <div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-[#060f1e] px-3 text-center">
-                  <div className="display-font text-[17px] font-semibold leading-tight">{formatUsd(totalEscrowVolume)}</div>
+                  <div className="display-font text-[17px] font-semibold leading-tight">{formatSettlementTokenAmount(totalEscrowVolume)}</div>
                   <div className="mt-1 text-[11px] leading-none text-slate-400">Total Volume</div>
                 </div>
               </motion.div>
@@ -480,7 +476,7 @@ export function DashboardDesktopScreen({
                     <div>
                       <div className="font-medium text-white">{item.label}</div>
                       <div className="text-[11px] text-slate-400">
-                        {formatUsd(item.value)} ({totalEscrowVolume === 0 ? 0 : Math.round((item.value / totalEscrowVolume) * 100)}%)
+                        {formatSettlementTokenAmount(item.value)} ({totalEscrowVolume === 0 ? 0 : Math.round((item.value / totalEscrowVolume) * 100)}%)
                       </div>
                     </div>
                   </div>
@@ -679,7 +675,7 @@ export function DashboardMobileScreen({
     },
     {
       label: "Pending Release",
-      value: compactUsd(pendingReleaseValue),
+      value: compactTokenAmount(pendingReleaseValue),
       change: "Ready to settle",
       color: "#a78bfa",
       data: [180, 220, 200, 240, 280, 260, 300, 320, 310, 340, 340, Math.max(1, pendingReleaseValue / 1000)],
@@ -709,7 +705,7 @@ export function DashboardMobileScreen({
           </div>
 
           <div className="mt-3 display-font text-[2.2rem] font-semibold leading-none tracking-tight text-white">
-            <AnimatedValue text={`$${mobileTotalVolume.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+            <AnimatedValue text={formatSettlementTokenAmount(mobileTotalVolume)} />
           </div>
 
           <div className="mt-2 flex items-center gap-2">
@@ -731,7 +727,7 @@ export function DashboardMobileScreen({
             </div>
             <div className="border-l border-white/[0.05] pl-3">
               <div className="text-[9px] uppercase tracking-widest text-slate-500">Pending</div>
-              <div className="mt-0.5 text-[14px] font-semibold text-white">{compactUsd(pendingReleaseValue)}</div>
+              <div className="mt-0.5 text-[14px] font-semibold text-white">{compactTokenAmount(pendingReleaseValue)}</div>
             </div>
             <div className="border-l border-white/[0.05] pl-3">
               <div className="text-[9px] uppercase tracking-widest text-slate-500">Disputes</div>
@@ -955,7 +951,7 @@ export function DashboardMobileScreen({
             style={{ background: mobileDonutGradient }}
           >
             <div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-[#060f1e] px-2 text-center">
-              <div className="display-font text-[12px] font-semibold leading-tight text-white">{compactUsd(mobileTotalVolume)}</div>
+              <div className="display-font text-[12px] font-semibold leading-tight text-white">{compactTokenAmount(mobileTotalVolume)}</div>
               <div className="mt-0.5 text-[8px] leading-none text-slate-400">Total Volume</div>
             </div>
           </motion.div>
@@ -966,7 +962,7 @@ export function DashboardMobileScreen({
                 <div className="min-w-0">
                   <div className="truncate text-[10px] font-medium text-white">{item.label}</div>
                   <div className="text-[9px] text-slate-400">
-                    {compactUsd(item.value)} ({mobileTotalVolume === 0 ? 0 : Math.round((item.value / mobileTotalVolume) * 100)}%)
+                    {formatSettlementTokenAmount(item.value)} ({mobileTotalVolume === 0 ? 0 : Math.round((item.value / mobileTotalVolume) * 100)}%)
                   </div>
                 </div>
               </div>

@@ -10,7 +10,7 @@ import type {
   StatCard,
   TimelineItem,
 } from "@/lib/types";
-import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
+import { formatSettlementTokenAmount, settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 
 function parseAmount(value: string) {
   return Number(value.replace(/[^0-9.]/g, ""));
@@ -380,8 +380,8 @@ const disputesOpenCount = disputes.filter((dispute) => dispute.status === "Under
 
 export const overviewStats: StatCard[] = [
   { label: "Active Deals", value: formatCount(activeDealsCount), change: "Across all current flows", tone: "blue" },
-  { label: "Escrow Volume", value: `${formatUsd(totalEscrowVolume)} ${settlementTokenSymbol}`, change: "Unified with deal list", tone: "green" },
-  { label: "Pending Release", value: `${formatUsd(pendingReleaseVolume)} ${settlementTokenSymbol}`, change: "Ready to settle", tone: "purple" },
+  { label: "Escrow Volume", value: formatSettlementTokenAmount(totalEscrowVolume), change: "Unified with deal list", tone: "green" },
+  { label: "Pending Release", value: formatSettlementTokenAmount(pendingReleaseVolume), change: "Ready to settle", tone: "purple" },
   { label: "Disputes Open", value: formatCount(disputesOpenCount), change: "Needs review", tone: "orange" },
 ];
 
@@ -405,7 +405,7 @@ export const dealsStats: StatCard[] = [
     change: "Escalated deals",
     tone: "red",
   },
-  { label: "Total Escrow Volume", value: `${formatUsd(totalEscrowVolume)} ${settlementTokenSymbol}`, change: "Same source as dashboard", tone: "blue" },
+  { label: "Total Escrow Volume", value: formatSettlementTokenAmount(totalEscrowVolume), change: "Same source as dashboard", tone: "blue" },
 ];
 
 export const disputesStats: StatCard[] = [
@@ -430,7 +430,7 @@ export const disputesStats: StatCard[] = [
   },
   {
     label: "Funds Frozen",
-    value: `${formatUsd(disputes.filter((dispute) => dispute.status !== "Resolved").reduce((sum, dispute) => sum + parseAmount(dispute.amount), 0))} ${settlementTokenSymbol}`,
+    value: formatSettlementTokenAmount(disputes.filter((dispute) => dispute.status !== "Resolved").reduce((sum, dispute) => sum + parseAmount(dispute.amount), 0)),
     change: "Linked to open disputes",
     tone: "purple",
   },

@@ -565,7 +565,7 @@ export function TopBar({
         ) : !walletState.isCorrectNetwork ? (
           <ActionButton tone="orange" label={isWalletBusy ? "Switching..." : "Switch Network"} icon={Network} small disabled={isWalletBusy} onClick={onSwitchWalletNetwork} />
         ) : (
-          <ActionButton tone="slate" label="Disconnect" icon={Wallet} small onClick={onDisconnectWallet} />
+          <ActionButton tone="green" label="Connected" icon={Network} small disabled />
         )}
         <ActionButton tone="blue" label="Create Deal" icon={Plus} small onClick={onOpenCreateDeal} />
       </div>
@@ -1039,7 +1039,7 @@ export function MobileDrawer({
           ) : !walletState.isCorrectNetwork ? (
             <ActionButton tone="orange" label={isWalletBusy ? "Switching..." : "Switch Network"} icon={Network} small disabled={isWalletBusy} onClick={onSwitchWalletNetwork} />
           ) : (
-            <ActionButton tone="slate" label="Disconnect" icon={Wallet} small onClick={onDisconnectWallet} />
+            <ActionButton tone="green" label="Connected" icon={Network} small disabled />
           )}
         </div>
       </div>

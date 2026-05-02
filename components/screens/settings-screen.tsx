@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Copy,
   FileSearch2,
+  Network,
   Shield,
   ShieldAlert,
   ShieldCheck,
@@ -185,7 +186,7 @@ export function SettingsDesktopScreen() {
             ) : !walletState.isCorrectNetwork ? (
               <ActionButton tone="orange" label={isWalletBusy ? "Switching..." : "Switch Network"} icon={Wallet} small disabled={isWalletBusy} onClick={() => void switchWalletNetwork()} />
             ) : (
-              <ActionButton tone="slate" label="Disconnect Wallet" icon={Wallet} small onClick={disconnectWallet} />
+              <ActionButton tone="green" label="Connected" icon={Network} small disabled />
             )}
           </div>
         </Panel>
@@ -321,10 +322,10 @@ export function SettingsMobileScreen() {
           ) : (
             <button
               type="button"
-              onClick={disconnectWallet}
-              className="w-full rounded-[10px] border border-rose-500/25 bg-rose-500/[0.08] py-2.5 text-[12px] font-semibold text-rose-300 transition active:scale-[0.98] hover:bg-rose-500/[0.12]"
+              disabled
+              className="w-full rounded-[10px] border border-emerald-500/25 bg-emerald-500/[0.08] py-2.5 text-[12px] font-semibold text-emerald-300 opacity-90"
             >
-              Disconnect Wallet
+              Connected
             </button>
           )}
         </div>

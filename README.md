@@ -57,6 +57,8 @@ TradeLock provides a live escrow workspace that combines:
 - recurring market activity and daily wallet growth through QStash schedules
 - a responsive operations dashboard for deals, disputes, counterparties, and audit trails
 
+`tUSD` is a test settlement token used for repeatable hackathon escrow activity on Arbitrum Sepolia. The same contract flow can support USDC.
+
 ## What Is Live Right Now
 
 - `20` managed active wallets across buyers, sellers, and arbitration
@@ -126,6 +128,7 @@ sequenceDiagram
 - all asset flows use testnet `tUSD`
 - gas is paid with Arbitrum Sepolia ETH
 - activity is intentionally continuous to simulate a real B2B network
+- `tUSD` is used so judges can replay escrow activity safely and repeatedly; the same escrow contract flow can support USDC later
 
 ## Quick Start
 

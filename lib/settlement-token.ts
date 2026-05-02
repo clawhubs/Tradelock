@@ -5,3 +5,10 @@ export const settlementTokenSymbol = configuredSymbol && configuredSymbol.length
 export function withSettlementTokenSymbol(value: string) {
   return value.replace(/\bUSDC\b/g, settlementTokenSymbol);
 }
+
+export function formatSettlementTokenAmount(value: number) {
+  return `${value.toLocaleString("en-US", {
+    minimumFractionDigits: Number.isInteger(value) ? 0 : 2,
+    maximumFractionDigits: 2,
+  })} ${settlementTokenSymbol}`;
+}

@@ -2,7 +2,9 @@
 
 import { ArrowRight, CheckCircle2, ExternalLink, FileSearch2, GitBranch, Globe2, Network, Route, Scale, ShieldAlert, Users2, Wallet, type LucideIcon } from "lucide-react";
 
+import { getAddressExplorerUrl, getTxExplorerUrl, shortenHash } from "@/lib/explorer";
 import { settlementTokenSymbol } from "@/lib/settlement-token";
+import { getEscrowContractAddress, getSettlementTokenAddress } from "@/lib/tradelock-web3";
 import type { ServiceHealth } from "@/lib/types";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
 import { ActionButton, MobilePageHeader, Panel, StatusBadge, SummaryRow } from "@/components/tradelock-ui";
@@ -16,6 +18,7 @@ type JudgeScreenProps = {
 
 const pitchDeckPath = "/pitchdeck/tradelock-pitchdeck.html";
 const pitchDeckPdfPath = "/pitchdeck/tradelock-pitchdeck.pdf";
+const githubRepoUrl = "https://github.com/clawhubs/Tradelock";
 
 const reviewSteps = [
   {
@@ -35,6 +38,8 @@ const reviewSteps = [
     body: "Confirm QStash schedules, Upstash Redis, Supabase state, Pinata/IPFS proofs, and Arbitrum Sepolia contract activity.",
   },
 ];
+
+const settlementTokenNote = "tUSD is a test settlement token used for repeatable hackathon escrow activity on Arbitrum Sepolia. The same contract flow can support USDC.";
 
 const architectureNodes = [
   ["QStash", "Schedules recurring market activity and daily wallet growth."],
@@ -68,10 +73,20 @@ function JudgeView({
 }: JudgeScreenProps & { mode: "desktop" | "mobile" }) {
   const { data, custodySnapshot, systemStatus } = useTradeLockData();
   const latestDeal = data.deals[0];
+  const latestDispute = data.disputes[0];
+  const latestAuditEvent = data.auditEvents[0];
   const openDisputes = data.disputes.filter((dispute) => dispute.status !== "Resolved" && dispute.status !== "Archived");
   const verifiedEvents = data.auditEvents.filter((event) => event.status === "Verified" || event.status === "Finalized").length;
   const buyerCount = data.counterparties.filter((entry) => entry.role === "Buyer").length;
   const sellerCount = data.counterparties.filter((entry) => entry.role === "Seller").length;
+  const escrowContractAddress = getEscrowContractAddress();
+  const contractUrl = getAddressExplorerUrl(escrowContractAddress);
+  const latestTxHash = latestAuditEvent?.txHash ?? latestDeal?.txHash ?? latestDispute?.txHash;
+  const latestTxUrl = getTxExplorerUrl(latestTxHash);
+  const lastSyncedLabel = custodySnapshot?.recentActivity[0]?.createdAt ?? latestAuditEvent?.timestamp ?? latestDeal?.updated ?? latestDispute?.updated;
+  const settlementTokenAddress = getSettlementTokenAddress();
+  const settlementTokenUrl = getAddressExplorerUrl(settlementTokenAddress);
+  const custodyPoolUrl = getAddressExplorerUrl(custodySnapshot?.poolAddress);
   const services: Array<[string, ServiceHealth | undefined]> = [
     ["Supabase", systemStatus.services.supabase],
     ["Redis", systemStatus.services.redis],
@@ -175,17 +190,88 @@ function JudgeView({
               ))}
             </div>
           </Panel>
+
+          <Panel title="Arbitrum Sepolia Contracts">
+            <div className="space-y-3 text-sm">
+              <div className="rounded-[12px] border border-white/[0.08] bg-white/[0.025] p-4 text-[13px] leading-5 text-slate-400">
+                {settlementTokenNote}
+              </div>
+              <div className="space-y-3 rounded-[12px] border border-white/[0.08] bg-white/[0.02] p-4">
+                <SummaryRow
+                  label="Escrow Contract"
+                  value={
+                    contractUrl && escrowContractAddress ? (
+                      <a href={contractUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                        {shortenHash(escrowContractAddress)}
+                      </a>
+                    ) : (
+                      escrowContractAddress ? shortenHash(escrowContractAddress) : "Not configured"
+                    )
+                  }
+                />
+                <SummaryRow
+                  label="tUSD Contract"
+                  value={
+                    settlementTokenUrl && settlementTokenAddress ? (
+                      <a href={settlementTokenUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                        {shortenHash(settlementTokenAddress)}
+                      </a>
+                    ) : (
+                      settlementTokenAddress ? shortenHash(settlementTokenAddress) : "Not configured"
+                    )
+                  }
+                />
+                <SummaryRow
+                  label="Custody Pool Wallet"
+                  value={
+                    custodyPoolUrl && custodySnapshot?.poolAddress ? (
+                      <a href={custodyPoolUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                        {shortenHash(custodySnapshot.poolAddress)}
+                      </a>
+                    ) : (
+                      custodySnapshot?.poolAddress ? shortenHash(custodySnapshot.poolAddress) : "Not available"
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </Panel>
         </div>
 
         <div className="space-y-4">
           <Panel title="Latest Live Evidence" action={latestDeal ? <StatusBadge status={latestDeal.status} compact /> : undefined}>
             <div className="space-y-3 text-sm">
+              <SummaryRow
+                label="Contract"
+                value={
+                  contractUrl && escrowContractAddress ? (
+                    <a href={contractUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                      {shortenHash(escrowContractAddress)}
+                    </a>
+                  ) : (
+                    escrowContractAddress ? shortenHash(escrowContractAddress) : "Not configured"
+                  )
+                }
+              />
+              <SummaryRow
+                label="Latest TX"
+                value={
+                  latestTxUrl && latestTxHash ? (
+                    <a href={latestTxUrl} target="_blank" rel="noreferrer" className="text-blue-300 hover:text-blue-200">
+                      {shortenHash(latestTxHash)}
+                    </a>
+                  ) : (
+                    latestTxHash ? shortenHash(latestTxHash) : "N/A"
+                  )
+                }
+              />
               <SummaryRow label="Latest Deal" value={latestDeal?.id ?? "No deal loaded"} emphasized />
+              <SummaryRow label="Latest Dispute" value={latestDispute?.id ?? "No dispute yet"} />
               <SummaryRow label="Buyer" value={latestDeal?.buyer ?? "N/A"} />
               <SummaryRow label="Seller" value={latestDeal?.seller ?? "N/A"} />
               <SummaryRow label="Amount" value={latestDeal?.amount ?? `0.00 ${settlementTokenSymbol}`} emphasized />
               <SummaryRow label="Proof" value={latestDeal?.proofHash ?? "N/A"} />
-              <SummaryRow label="TX" value={compactHash(latestDeal?.txHash)} />
+              <SummaryRow label="Last Synced" value={lastSyncedLabel ?? "N/A"} />
               <ActionButton tone="blue" label="Open Audit Evidence" icon={ArrowRight} small onClick={onOpenAudit} />
             </div>
           </Panel>
@@ -206,6 +292,10 @@ function JudgeView({
 
           <Panel title="Pitch Deck">
             <div className="space-y-3 text-sm">
+              <a href={githubRepoUrl} target="_blank" rel="noreferrer" className="inline-flex items-center justify-between rounded-[10px] border border-blue-400/25 bg-blue-500/10 px-3 py-3 text-blue-100 transition hover:bg-blue-500/15">
+                Open GitHub repository
+                <ExternalLink className="h-4 w-4" />
+              </a>
               <p className="text-slate-400">
                 The deck explains the trust problem, TradeLock solution, architecture, live demo map, and roadmap in a judge-friendly format.
               </p>
