@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   auditFilters,
@@ -119,6 +119,7 @@ function TradeLockShell() {
   const [selectedCounterparty, setSelectedCounterparty] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
+  const latestActivitySyncRef = useRef("");
 
   const selectedDeal = useMemo(
     () => data.deals.find((deal) => deal.id === selectedDealId) ?? data.deals[0] ?? null,
@@ -976,6 +977,24 @@ function TradeLockShell() {
       document.removeEventListener("visibilitychange", handleFocus);
     };
   }, []);
+
+  useEffect(() => {
+    const latestActivityId = custodySnapshot?.recentActivity?.[0]?.id;
+
+    if (!latestActivityId || latestActivitySyncRef.current === latestActivityId) {
+      return;
+    }
+
+    latestActivitySyncRef.current = latestActivityId;
+
+    const timeoutId = window.setTimeout(() => {
+      void syncAppState({ notifyOnError: false });
+    }, 350);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [custodySnapshot?.recentActivity]);
 
   useEffect(() => {
     const provider = getInjectedProvider();

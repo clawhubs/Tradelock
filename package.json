@@ -1,7 +1,7 @@
 {
   "name": "tradelock",
   "version": "1.0.0",
-  "description": "TradeLock UI showcase and responsive dashboard mockup.",
+  "description": "TradeLock is a live Arbitrum Sepolia escrow workspace with managed wallets, automated activity, and dispute-ready audit flows.",
   "scripts": {
     "dev": "next dev --port 3050",
     "build": "next build",
@@ -10,7 +10,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.105.1",
     "@tailwindcss/postcss": "^4.2.4",

@@ -1,0 +1,122 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="40" x2="1160" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#081937"/>
+      <stop offset="0.55" stop-color="#0A1430"/>
+      <stop offset="1" stop-color="#040B1A"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="rgba(20,55,122,0.9)"/>
+      <stop offset="1" stop-color="rgba(8,22,54,0.86)"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="187" y1="107" x2="963" y2="597" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5FB3FF"/>
+      <stop offset="0.48" stop-color="#36D1DC"/>
+      <stop offset="1" stop-color="#60A5FA"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(225 110) rotate(36) scale(372 215)">
+      <stop stop-color="#246BFF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#246BFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1080 120) rotate(152) scale(308 184)">
+      <stop stop-color="#915CFF" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#915CFF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="28"/>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" rx="36" fill="url(#bg)"/>
+  <rect width="1280" height="640" rx="36" fill="url(#glowA)"/>
+  <rect width="1280" height="640" rx="36" fill="url(#glowB)"/>
+
+  <g opacity="0.18">
+    <path d="M0 150H1280" stroke="#4B79C8" stroke-width="1"/>
+    <path d="M0 320H1280" stroke="#4B79C8" stroke-width="1"/>
+    <path d="M0 490H1280" stroke="#4B79C8" stroke-width="1"/>
+    <path d="M240 0V640" stroke="#4B79C8" stroke-width="1"/>
+    <path d="M510 0V640" stroke="#4B79C8" stroke-width="1"/>
+    <path d="M780 0V640" stroke="#4B79C8" stroke-width="1"/>
+    <path d="M1050 0V640" stroke="#4B79C8" stroke-width="1"/>
+  </g>
+
+  <circle cx="1108" cy="110" r="82" fill="#203A7F" opacity="0.22" filter="url(#blur)"/>
+  <circle cx="952" cy="492" r="96" fill="#0F8E9A" opacity="0.18" filter="url(#blur)"/>
+
+  <g>
+    <text x="78" y="104" fill="#9FD1FF" font-size="18" font-family="Arial, Helvetica, sans-serif" letter-spacing="4.8">ARBITRUM ESCROW INFRASTRUCTURE</text>
+    <text x="78" y="188" fill="#F4F8FF" font-size="72" font-weight="700" font-family="Arial, Helvetica, sans-serif">TradeLock</text>
+    <text x="78" y="248" fill="#E1EDFF" font-size="28" font-weight="600" font-family="Arial, Helvetica, sans-serif">
+      Live cross-border escrow with managed wallets,
+    </text>
+    <text x="78" y="286" fill="#E1EDFF" font-size="28" font-weight="600" font-family="Arial, Helvetica, sans-serif">
+      continuous testnet activity, and dispute-ready audit trails.
+    </text>
+    <text x="78" y="344" fill="#B7CAE8" font-size="22" font-family="Arial, Helvetica, sans-serif">
+      Built on Arbitrum Sepolia with Solidity, Next.js, Supabase, Upstash,
+    </text>
+    <text x="78" y="376" fill="#B7CAE8" font-size="22" font-family="Arial, Helvetica, sans-serif">
+      Pinata, and a custodial automation engine designed for realistic demos.
+    </text>
+  </g>
+
+  <g transform="translate(78 432)">
+    <rect width="182" height="54" rx="14" fill="#0C1E46" stroke="#3D76E2" stroke-opacity="0.55"/>
+    <text x="22" y="22" fill="#93C5FD" font-size="13" font-family="Arial, Helvetica, sans-serif" letter-spacing="2">LIVE STATUS</text>
+    <text x="22" y="40" fill="#F8FBFF" font-size="20" font-weight="700" font-family="Arial, Helvetica, sans-serif">20 active wallets</text>
+
+    <rect x="202" width="182" height="54" rx="14" fill="#0C1E46" stroke="#26B9BE" stroke-opacity="0.55"/>
+    <text x="224" y="22" fill="#8FEAF0" font-size="13" font-family="Arial, Helvetica, sans-serif" letter-spacing="2">SETTLEMENT</text>
+    <text x="224" y="40" fill="#F8FBFF" font-size="20" font-weight="700" font-family="Arial, Helvetica, sans-serif">tUSD escrow flow</text>
+
+    <rect x="404" width="212" height="54" rx="14" fill="#0C1E46" stroke="#52A3FF" stroke-opacity="0.55"/>
+    <text x="426" y="22" fill="#9FD1FF" font-size="13" font-family="Arial, Helvetica, sans-serif" letter-spacing="2">AUTOMATION</text>
+    <text x="426" y="40" fill="#F8FBFF" font-size="20" font-weight="700" font-family="Arial, Helvetica, sans-serif">QStash + Upstash Redis</text>
+  </g>
+
+  <g transform="translate(788 86)">
+    <rect width="414" height="466" rx="26" fill="rgba(7,20,48,0.88)" stroke="rgba(109,163,255,0.24)"/>
+    <rect x="28" y="26" width="358" height="56" rx="18" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.08)"/>
+    <text x="52" y="49" fill="#A7C7F5" font-size="14" font-family="Arial, Helvetica, sans-serif">Recent Activity</text>
+    <text x="52" y="67" fill="#F7FBFF" font-size="24" font-weight="700" font-family="Arial, Helvetica, sans-serif">Live custody-driven market feed</text>
+
+    <g transform="translate(30 108)">
+      <rect width="354" height="90" rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.08)"/>
+      <circle cx="30" cy="28" r="12" fill="#0E8F79"/>
+      <circle cx="30" cy="28" r="6" fill="#8CF7E9"/>
+      <text x="58" y="30" fill="#F7FBFF" font-size="20" font-weight="700" font-family="Arial, Helvetica, sans-serif">Live Activity</text>
+      <text x="58" y="56" fill="#C9DAEF" font-size="15" font-family="Arial, Helvetica, sans-serif">GlobalImport Ltd. completed an automated purchase</text>
+      <text x="58" y="76" fill="#C9DAEF" font-size="15" font-family="Arial, Helvetica, sans-serif">from Ningbo Tech Ltd. on Arbitrum Sepolia.</text>
+      <text x="292" y="30" fill="#8CA6CF" font-size="14" font-family="Arial, Helvetica, sans-serif">May 02</text>
+      <text x="304" y="50" fill="#8CA6CF" font-size="14" font-family="Arial, Helvetica, sans-serif">10:43</text>
+    </g>
+
+    <g transform="translate(30 212)">
+      <rect width="354" height="90" rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.08)"/>
+      <circle cx="30" cy="28" r="12" fill="#A55A16"/>
+      <circle cx="30" cy="28" r="6" fill="#FFD28C"/>
+      <text x="58" y="30" fill="#F7FBFF" font-size="20" font-weight="700" font-family="Arial, Helvetica, sans-serif">Live Dispute</text>
+      <text x="58" y="56" fill="#C9DAEF" font-size="15" font-family="Arial, Helvetica, sans-serif">Meridian Trade Partners 06 opened a dispute</text>
+      <text x="58" y="76" fill="#C9DAEF" font-size="15" font-family="Arial, Helvetica, sans-serif">with Java Components Works 04.</text>
+      <text x="292" y="30" fill="#8CA6CF" font-size="14" font-family="Arial, Helvetica, sans-serif">May 02</text>
+      <text x="304" y="50" fill="#8CA6CF" font-size="14" font-family="Arial, Helvetica, sans-serif">10:49</text>
+    </g>
+
+    <g transform="translate(30 316)">
+      <rect width="168" height="116" rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="18" y="28" fill="#A7C7F5" font-size="13" font-family="Arial, Helvetica, sans-serif">NETWORK</text>
+      <text x="18" y="58" fill="#F7FBFF" font-size="28" font-weight="700" font-family="Arial, Helvetica, sans-serif">Arbitrum</text>
+      <text x="18" y="86" fill="#D3E4FF" font-size="18" font-family="Arial, Helvetica, sans-serif">Sepolia testnet</text>
+    </g>
+
+    <g transform="translate(216 316)">
+      <rect width="168" height="116" rx="18" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.08)"/>
+      <text x="18" y="28" fill="#8FEAF0" font-size="13" font-family="Arial, Helvetica, sans-serif">SYNC</text>
+      <text x="18" y="58" fill="#F7FBFF" font-size="28" font-weight="700" font-family="Arial, Helvetica, sans-serif">3 sec</text>
+      <text x="18" y="86" fill="#D3E4FF" font-size="18" font-family="Arial, Helvetica, sans-serif">live workspace cadence</text>
+    </g>
+  </g>
+
+  <path d="M78 601H1202" stroke="url(#accent)" stroke-opacity="0.42" stroke-width="2"/>
+</svg>
