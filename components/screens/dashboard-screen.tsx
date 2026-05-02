@@ -159,9 +159,15 @@ function WorldConnections() {
 export function DashboardDesktopScreen({
   selectedDeal,
   onSelectDeal,
+  onViewDeals,
+  onViewAudit,
+  onViewSelectedDealDetails,
 }: {
   selectedDeal: Deal;
   onSelectDeal: (id: string) => void;
+  onViewDeals: () => void;
+  onViewAudit: () => void;
+  onViewSelectedDealDetails: (dealId: string) => void;
 }) {
   const { data, custodySnapshot, releaseFundsForDeal, openDisputeForDeal, walletState } = useTradeLockData();
   const { toast } = useToast();
@@ -315,7 +321,14 @@ export function DashboardDesktopScreen({
               </div>
             </Panel>
           )}
-          <Panel title="Recent Deals" action="View all">
+          <Panel
+            title="Recent Deals"
+            action={
+              <button type="button" onClick={onViewDeals} className="text-[11px] text-blue-300 transition hover:text-blue-200">
+                View all
+              </button>
+            }
+          >
             <div className="overflow-hidden rounded-[8px] border border-white/8">
               <table className="min-w-full divide-y divide-white/5 text-left">
                 <thead className="bg-white/[0.04] text-[10px] text-slate-400">
@@ -429,7 +442,18 @@ export function DashboardDesktopScreen({
         </div>
 
         <div className="space-y-3">
-          <Panel title="Escrow Overview" action="View details">
+          <Panel
+            title="Escrow Overview"
+            action={
+              <button
+                type="button"
+                onClick={() => onViewSelectedDealDetails(selectedDeal.id)}
+                className="text-[11px] text-blue-300 transition hover:text-blue-200"
+              >
+                View details
+              </button>
+            }
+          >
             <div className="grid grid-cols-[154px_minmax(0,1fr)] items-center gap-4">
               <motion.div
                 className="relative h-[154px] w-[154px] rounded-full p-5"
@@ -459,7 +483,14 @@ export function DashboardDesktopScreen({
             </div>
           </Panel>
 
-          <Panel title="Recent Activity" action="View all">
+          <Panel
+            title="Recent Activity"
+            action={
+              <button type="button" onClick={onViewAudit} className="text-[11px] text-blue-300 transition hover:text-blue-200">
+                View all
+              </button>
+            }
+          >
             <div className="space-y-2">
               {activityRows.map(([title, body, time, tone], i) => (
                 <motion.div
@@ -555,8 +586,16 @@ function Sparkline({ data, color = "#60a5fa", filled = true }: { data: number[];
 
 export function DashboardMobileScreen({
   selectedDeal,
+  onSelectDeal,
+  onViewDeals,
+  onViewAudit,
+  onViewSelectedDealDetails,
 }: {
   selectedDeal: Deal;
+  onSelectDeal: (id: string) => void;
+  onViewDeals: () => void;
+  onViewAudit: () => void;
+  onViewSelectedDealDetails: (dealId: string) => void;
 }) {
   const { data, custodySnapshot, releaseFundsForDeal, openDisputeForDeal, walletState } = useTradeLockData();
   const { toast } = useToast();
@@ -739,13 +778,14 @@ export function DashboardMobileScreen({
       <div>
         <div className="mb-2 flex items-center justify-between px-1">
           <div className="text-[14px] font-semibold text-white">Recent Deals</div>
-          <button className="text-[11px] text-blue-300">View all</button>
+          <button type="button" onClick={onViewDeals} className="text-[11px] text-blue-300">View all</button>
         </div>
         <div className="space-y-2">
           {recentDeals.map((deal, i) => (
             <motion.button
               key={deal.id}
               type="button"
+              onClick={() => onSelectDeal(deal.id)}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 + 0.55, duration: 0.25 }}
@@ -892,7 +932,7 @@ export function DashboardMobileScreen({
         <div className="pointer-events-none absolute inset-x-[20%] top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(120,170,255,0.5),transparent)]" />
         <div className="mb-3 flex items-center justify-between">
           <div className="text-[13px] font-semibold text-white">Escrow Overview</div>
-          <button className="text-[10px] text-blue-300">View details</button>
+          <button type="button" onClick={() => onViewSelectedDealDetails(selectedDeal.id)} className="text-[10px] text-blue-300">View details</button>
         </div>
         <div className="flex items-center gap-4">
           <motion.div
@@ -990,7 +1030,7 @@ export function DashboardMobileScreen({
       <div>
         <div className="mb-2 flex items-center justify-between px-1">
           <div className="text-[14px] font-semibold text-white">Recent Activity</div>
-          <button className="text-[11px] text-blue-300">View all</button>
+          <button type="button" onClick={onViewAudit} className="text-[11px] text-blue-300">View all</button>
         </div>
         <div className="space-y-2">
           {activityRows.map(([title, body, time, tone], i) => (

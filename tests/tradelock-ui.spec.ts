@@ -130,3 +130,27 @@ test("desktop menus support live filters, search, and pagination", async ({ page
   await expect(page.getByText("Arun Mehta - Admin")).toHaveCount(0);
   await expect(page.getByText("12 active members")).toHaveCount(0);
 });
+
+test("dashboard view actions navigate and selected deal follows recent rows", async ({ page }) => {
+  await mockInjectedWallet(page);
+  await page.goto("/");
+  await page.waitForTimeout(1500);
+
+  const recentDealsTable = page.locator("table").first();
+  const firstDealRow = recentDealsTable.locator("tbody tr").first();
+  const firstDealId = (await firstDealRow.locator("td").first().textContent())?.trim() ?? "";
+  expect(firstDealId).not.toBe("");
+
+  await firstDealRow.click();
+  await expect(page.getByText("Selected Deal").first()).toBeVisible();
+  await expect(page.locator('div.display-font.text-\\[33px\\].font-semibold.leading-none.text-white').first()).toHaveText(firstDealId);
+
+  await page.getByRole("button", { name: "View details" }).first().click();
+  await expect(page.getByRole("heading", { name: "Deals" })).toBeVisible();
+  await expect(page.getByText(firstDealId, { exact: true }).first()).toBeVisible();
+
+  await page.goto("/");
+  await page.waitForTimeout(500);
+  await page.getByRole("button", { name: "View all" }).first().click();
+  await expect(page.getByRole("heading", { name: "Deals" })).toBeVisible();
+});

@@ -1005,6 +1005,19 @@ function TradeLockShell() {
   }, [data.deals, selectedDealId]);
 
   useEffect(() => {
+    if (activeScreen !== "dashboard" || !data.deals[0]) {
+      return;
+    }
+
+    const latestDealId = data.deals[0].id;
+    const selectedIsVisibleOnDashboard = data.deals.slice(0, 4).some((deal) => deal.id === selectedDealId);
+
+    if (!selectedDealId || !selectedIsVisibleOnDashboard) {
+      setSelectedDealId(latestDealId);
+    }
+  }, [activeScreen, data.deals, selectedDealId]);
+
+  useEffect(() => {
     if (!data.disputes.some((dispute) => dispute.id === selectedDisputeId) && data.disputes[0]) {
       setSelectedDisputeId(data.disputes[0].id);
     }
@@ -1074,7 +1087,18 @@ function TradeLockShell() {
           onOpenSearch={() => setCommandOpen(true)}
           onOpenCreateDeal={() => setActiveScreen("create")}
         >
-          {activeScreen === "dashboard" && selectedDeal && <DashboardDesktopScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
+          {activeScreen === "dashboard" && selectedDeal && (
+            <DashboardDesktopScreen
+              selectedDeal={selectedDeal}
+              onSelectDeal={setSelectedDealId}
+              onViewDeals={() => setActiveScreen("deals")}
+              onViewAudit={() => setActiveScreen("audit")}
+              onViewSelectedDealDetails={(dealId) => {
+                setSelectedDealId(dealId);
+                setActiveScreen("deals");
+              }}
+            />
+          )}
           {activeScreen === "deals" && selectedDeal && <DealsDesktopScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
           {activeScreen === "create" && <CreateDesktopScreen onCreated={setSelectedDealId} />}
           {activeScreen === "disputes" && selectedDispute && <DisputesDesktopScreen selectedDispute={selectedDispute} onSelectDispute={setSelectedDisputeId} />}
@@ -1103,7 +1127,18 @@ function TradeLockShell() {
           onSwitchWalletNetwork={() => void switchWalletNetwork()}
           onOpenCreateDeal={() => setActiveScreen("create")}
         >
-          {activeScreen === "dashboard" && selectedDeal && <DashboardMobileScreen selectedDeal={selectedDeal} />}
+          {activeScreen === "dashboard" && selectedDeal && (
+            <DashboardMobileScreen
+              selectedDeal={selectedDeal}
+              onSelectDeal={setSelectedDealId}
+              onViewDeals={() => setActiveScreen("deals")}
+              onViewAudit={() => setActiveScreen("audit")}
+              onViewSelectedDealDetails={(dealId) => {
+                setSelectedDealId(dealId);
+                setActiveScreen("deals");
+              }}
+            />
+          )}
           {activeScreen === "deals" && selectedDeal && <DealsMobileScreen selectedDeal={selectedDeal} onSelectDeal={setSelectedDealId} />}
           {activeScreen === "create" && <CreateMobileScreen onCreated={setSelectedDealId} />}
           {activeScreen === "disputes" && selectedDispute && <DisputesMobileScreen selectedDispute={selectedDispute} onSelectDispute={setSelectedDisputeId} />}
