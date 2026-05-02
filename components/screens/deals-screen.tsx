@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Clock3, Filter, Plus, Upload } from "lucide-react";
 
 import { downloadCsv } from "@/lib/browser-export";
+import { getCountryFlag } from "@/lib/country-flags";
 import { dateRangeLabels, isWithinDateRange, matchesQuery, nextDateRange, paginateItems, type DateRangeKey } from "@/lib/list-controls";
 import type { Deal } from "@/lib/types";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
@@ -152,11 +153,17 @@ export function DealsDesktopScreen({
                   >
                     <td className="px-4 py-4 font-medium text-white">{deal.id}</td>
                     <td className="px-4 py-4">
-                      <div className="font-medium text-white">{deal.buyer}</div>
+                      <div className="flex items-center gap-2 font-medium text-white">
+                        <span>{getCountryFlag(deal.buyerLocation, deal.buyer)}</span>
+                        <span>{deal.buyer}</span>
+                      </div>
                       <div className="text-[10px] text-slate-400">{deal.buyerLocation}</div>
                     </td>
                     <td className="px-4 py-4">
-                      <div className="font-medium text-white">{deal.seller}</div>
+                      <div className="flex items-center gap-2 font-medium text-white">
+                        <span>{getCountryFlag(deal.sellerLocation, deal.seller)}</span>
+                        <span>{deal.seller}</span>
+                      </div>
                       <div className="text-[10px] text-slate-400">{deal.sellerLocation}</div>
                     </td>
                     <td className="px-4 py-4 font-medium text-white">{deal.amountRaw}</td>
@@ -293,7 +300,11 @@ export function DealsMobileScreen({
             active={selectedDeal.id === deal.id}
             onClick={() => onSelectDeal(deal.id)}
             title={deal.id}
-            subtitle={`${deal.buyer} → ${deal.seller}`}
+            subtitle={
+              <span>
+                {getCountryFlag(deal.buyerLocation, deal.buyer)} {deal.buyer} {" -> "} {getCountryFlag(deal.sellerLocation, deal.seller)} {deal.seller}
+              </span>
+            }
             badge={deal.status}
             footer={`${deal.progress} • ${deal.amount}`}
           />
@@ -312,8 +323,16 @@ export function DealsMobileScreen({
       <Panel title="Selected Deal" action={<StatusBadge status={selectedDeal.status} compact />}>
         <div className="space-y-3 text-sm">
           <div className="grid grid-cols-2 gap-3">
-            <div><div className="text-slate-400">Buyer</div><div className="mt-1 text-white">{selectedDeal.buyer}</div></div>
-            <div><div className="text-slate-400">Seller</div><div className="mt-1 text-white">{selectedDeal.seller}</div></div>
+            <div>
+              <div className="text-slate-400">Buyer</div>
+              <div className="mt-1 text-white">{getCountryFlag(selectedDeal.buyerLocation, selectedDeal.buyer)} {selectedDeal.buyer}</div>
+              <div className="text-[10px] text-slate-500">{selectedDeal.buyerLocation}</div>
+            </div>
+            <div>
+              <div className="text-slate-400">Seller</div>
+              <div className="mt-1 text-white">{getCountryFlag(selectedDeal.sellerLocation, selectedDeal.seller)} {selectedDeal.seller}</div>
+              <div className="text-[10px] text-slate-500">{selectedDeal.sellerLocation}</div>
+            </div>
             <div><div className="text-slate-400">Amount</div><div className="mt-1 text-white">{selectedDeal.amount}</div></div>
             <div><div className="text-slate-400">Network</div><div className="mt-1 text-white">{selectedDeal.network}</div></div>
           </div>

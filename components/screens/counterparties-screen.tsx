@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Clock3, ExternalLink, Filter, Upload } from "lucide-react";
 
 import { downloadCsv } from "@/lib/browser-export";
+import { getCountryFlag } from "@/lib/country-flags";
 import { dateRangeLabels, isWithinDateRange, matchesQuery, nextDateRange, paginateItems, type DateRangeKey } from "@/lib/list-controls";
 import type { Counterparty } from "@/lib/types";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
@@ -128,7 +129,10 @@ export function CounterpartiesDesktopScreen({
                     className={`cursor-pointer transition hover:bg-white/[0.03] ${selectedCounterparty.company === entry.company ? "bg-blue-500/12 shadow-[inset_0_1px_0_rgba(96,165,250,0.12)]" : ""}`}
                   >
                     <td className="px-4 py-4">
-                      <div className="font-medium text-white">{entry.company}</div>
+                      <div className="flex items-center gap-2 font-medium text-white">
+                        <span>{getCountryFlag(entry.location, entry.company)}</span>
+                        <span>{entry.company}</span>
+                      </div>
                       <div className="text-[10px] text-slate-400">{entry.handle}</div>
                     </td>
                     <td className="px-4 py-4">{entry.role}</td>
@@ -165,7 +169,9 @@ export function CounterpartiesDesktopScreen({
       <Panel title="Selected Counterparty" action={<StatusBadge status={selectedCounterparty.status} compact />} className="self-start xl:sticky xl:top-4">
         <div className="space-y-4 text-sm">
           <div className="rounded-[10px] border border-white/[0.08] bg-white/[0.025] p-3.5">
-            <div className="display-font text-[1.5rem] font-semibold leading-tight text-white">{selectedCounterparty.company}</div>
+            <div className="display-font text-[1.5rem] font-semibold leading-tight text-white">
+              {getCountryFlag(selectedCounterparty.location, selectedCounterparty.company)} {selectedCounterparty.company}
+            </div>
             <div className="mt-1 text-[12px] text-slate-400">{selectedCounterparty.handle}</div>
           </div>
           <div className="space-y-3 border-y border-white/8 py-3">

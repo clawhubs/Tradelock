@@ -2,6 +2,7 @@
 
 import { ArrowRight, CheckCircle2, ExternalLink, FileSearch2, GitBranch, Globe2, Network, Route, Scale, ShieldAlert, Users2, Wallet, type LucideIcon } from "lucide-react";
 
+import { getCountryFlag } from "@/lib/country-flags";
 import { getAddressExplorerUrl, getTxExplorerUrl, shortenHash } from "@/lib/explorer";
 import { settlementTokenSymbol } from "@/lib/settlement-token";
 import { getEscrowContractAddress, getSettlementTokenAddress } from "@/lib/tradelock-web3";
@@ -164,7 +165,10 @@ function JudgeView({
                 <tbody className="divide-y divide-white/5">
                   {data.counterparties.slice(0, 8).map((entry) => (
                     <tr key={entry.company} className="transition hover:bg-white/[0.03]">
-                      <td className="px-4 py-3 font-medium text-white">{entry.company}</td>
+                      <td className="px-4 py-3 font-medium text-white">
+                        <span className="mr-2">{getCountryFlag(entry.location, entry.company)}</span>
+                        <span>{entry.company}</span>
+                      </td>
                       <td className="px-4 py-3">{entry.role}</td>
                       <td className="px-4 py-3">{entry.location}</td>
                       <td className="px-4 py-3 font-mono text-[11px] text-cyan-200">{entry.wallet}</td>
@@ -267,8 +271,8 @@ function JudgeView({
               />
               <SummaryRow label="Latest Deal" value={latestDeal?.id ?? "No deal loaded"} emphasized />
               <SummaryRow label="Latest Dispute" value={latestDispute?.id ?? "No dispute yet"} />
-              <SummaryRow label="Buyer" value={latestDeal?.buyer ?? "N/A"} />
-              <SummaryRow label="Seller" value={latestDeal?.seller ?? "N/A"} />
+              <SummaryRow label="Buyer" value={latestDeal ? `${getCountryFlag(latestDeal.buyerLocation, latestDeal.buyer)} ${latestDeal.buyer}` : "N/A"} />
+              <SummaryRow label="Seller" value={latestDeal ? `${getCountryFlag(latestDeal.sellerLocation, latestDeal.seller)} ${latestDeal.seller}` : "N/A"} />
               <SummaryRow label="Amount" value={latestDeal?.amount ?? `0.00 ${settlementTokenSymbol}`} emphasized />
               <SummaryRow label="Proof" value={latestDeal?.proofHash ?? "N/A"} />
               <SummaryRow label="Last Synced" value={lastSyncedLabel ?? "N/A"} />

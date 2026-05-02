@@ -40,6 +40,7 @@ import {
   X,
 } from "lucide-react";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
+import { getCountryFlag } from "@/lib/country-flags";
 import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 import { getTxExplorerUrl, shortenHash } from "@/lib/explorer";
 import type { CustodyActivityItem, NavItem, ScreenKey, SettingsCard, StatCard, StatusKey, ToneKey, WalletState } from "@/lib/types";
@@ -799,7 +800,7 @@ export function DealSummaryCard({
             <div className="mb-1 text-[10px] uppercase tracking-[0.12em] text-slate-500">Buyer</div>
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/15 text-sm font-medium text-blue-200">
-                {deal.buyer.charAt(0)}
+                {getCountryFlag(deal.buyerLocation, deal.buyer)}
               </div>
               <div>
                 <div className="font-medium text-white">{deal.buyer}</div>
@@ -812,7 +813,7 @@ export function DealSummaryCard({
             <div className="mb-1 text-[10px] uppercase tracking-[0.12em] text-slate-500">Seller</div>
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-500/15 text-sm font-medium text-blue-200">
-                {deal.seller.charAt(0)}
+                {getCountryFlag(deal.sellerLocation, deal.seller)}
               </div>
               <div>
                 <div className="font-medium text-white">{deal.seller}</div>
@@ -921,9 +922,9 @@ export function MobileListCard({
   active = false,
 }: {
   title: string;
-  subtitle: string;
+  subtitle: ReactNode;
   badge: StatusKey;
-  footer: string;
+  footer: ReactNode;
   onClick?: () => void;
   active?: boolean;
 }) {

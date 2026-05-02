@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Clock3, Filter, ShieldAlert, ShieldCheck, Upload } from "lucide-react";
 
 import { downloadCsv } from "@/lib/browser-export";
+import { getCountryFlag } from "@/lib/country-flags";
 import { dateRangeLabels, isWithinDateRange, matchesQuery, nextDateRange, paginateItems, type DateRangeKey } from "@/lib/list-controls";
 import type { Dispute } from "@/lib/types";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
@@ -30,12 +31,13 @@ export function DisputesDesktopScreen({
   onSelectDispute: (id: string) => void;
 }) {
   const { data } = useTradeLockData();
-  const { disputeFilters, disputes, disputesStats } = data;
+  const { deals, disputeFilters, disputes, disputesStats } = data;
   const [activeFilter, setActiveFilter] = useState(disputeFilters[0] ?? "All");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeKey>("all");
   const [evidenceOnly, setEvidenceOnly] = useState(false);
   const [page, setPage] = useState(1);
+  const dealById = useMemo(() => new Map(deals.map((deal) => [deal.id, deal])), [deals]);
   const filteredDisputes = useMemo(
     () =>
       disputes.filter((dispute) => {
@@ -63,6 +65,7 @@ export function DisputesDesktopScreen({
   );
   const paginatedDisputes = useMemo(() => paginateItems(filteredDisputes, page, 8), [filteredDisputes, page]);
   const txUrl = getTxExplorerUrl(selectedDispute.txHash);
+  const selectedDisputeDeal = dealById.get(selectedDispute.dealId);
 
   useEffect(() => {
     setPage(1);
@@ -126,6 +129,9 @@ export function DisputesDesktopScreen({
               </thead>
               <tbody className="divide-y divide-white/5">
                 {paginatedDisputes.items.map((dispute) => (
+                  (() => {
+                    const disputeDeal = dealById.get(dispute.dealId);
+                    return (
                   <tr
                     key={dispute.id}
                     onClick={() => onSelectDispute(dispute.id)}
@@ -133,8 +139,18 @@ export function DisputesDesktopScreen({
                   >
                     <td className="px-4 py-4 font-medium text-white">{dispute.id}</td>
                     <td className="px-4 py-4">{dispute.dealId}</td>
-                    <td className="px-4 py-4">{dispute.buyer}</td>
-                    <td className="px-4 py-4">{dispute.seller}</td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <span>{getCountryFlag(disputeDeal?.buyerLocation, dispute.buyer)}</span>
+                        <span>{dispute.buyer}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <span>{getCountryFlag(disputeDeal?.sellerLocation, dispute.seller)}</span>
+                        <span>{dispute.seller}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-4">
                       <div className="text-slate-200">{dispute.reason}</div>
                       <div className="mt-1 text-[10px] text-slate-500">{dispute.evidenceStatus}</div>
@@ -144,6 +160,8 @@ export function DisputesDesktopScreen({
                     <td className="px-4 py-4"><StatusBadge status={dispute.status} compact /></td>
                     <td className="px-4 py-4 text-[11px] text-slate-400">{dispute.updated}</td>
                   </tr>
+                    );
+                  })()
                 ))}
                 {paginatedDisputes.items.length === 0 && (
                   <tr>
@@ -177,8 +195,8 @@ export function DisputesDesktopScreen({
           </div>
           <div className="space-y-3 border-y border-white/8 py-3">
             <SummaryRow label="Related Deal" value={selectedDispute.dealId} />
-            <SummaryRow label="Buyer" value={selectedDispute.buyer} />
-            <SummaryRow label="Seller" value={selectedDispute.seller} />
+            <SummaryRow label="Buyer" value={<span>{getCountryFlag(selectedDisputeDeal?.buyerLocation, selectedDispute.buyer)} {selectedDispute.buyer}</span>} />
+            <SummaryRow label="Seller" value={<span>{getCountryFlag(selectedDisputeDeal?.sellerLocation, selectedDispute.seller)} {selectedDispute.seller}</span>} />
             <SummaryRow label="Amount in Dispute" value={selectedDispute.amount} emphasized />
           </div>
           <div className="space-y-3">
@@ -216,10 +234,11 @@ export function DisputesMobileScreen({
   onSelectDispute: (id: string) => void;
 }) {
   const { data } = useTradeLockData();
-  const { disputes, disputeFilters } = data;
+  const { deals, disputes, disputeFilters } = data;
   const [activeFilter, setActiveFilter] = useState(disputeFilters[0] ?? "All");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
+  const dealById = useMemo(() => new Map(deals.map((deal) => [deal.id, deal])), [deals]);
   const filteredDisputes = useMemo(
     () =>
       disputes.filter((dispute) => {
@@ -253,15 +272,20 @@ export function DisputesMobileScreen({
       <FilterRow filters={disputeFilters} compact activeFilter={activeFilter} onSelect={setActiveFilter} />
       <div className="space-y-3">
         {paginatedDisputes.items.map((dispute) => (
+          (() => {
+            const disputeDeal = dealById.get(dispute.dealId);
+            return (
           <MobileListCard
             key={dispute.id}
             active={selectedDispute.id === dispute.id}
             onClick={() => onSelectDispute(dispute.id)}
             title={dispute.id}
-            subtitle={dispute.reason}
+            subtitle={<span>{getCountryFlag(disputeDeal?.buyerLocation, dispute.buyer)} {dispute.buyer} {" -> "} {getCountryFlag(disputeDeal?.sellerLocation, dispute.seller)} {dispute.seller}</span>}
             badge={dispute.status}
-            footer={`${dispute.amount} • ${dispute.updated}`}
+            footer={`${dispute.reason} • ${dispute.amount}`}
           />
+            );
+          })()
         ))}
       </div>
       <Pager

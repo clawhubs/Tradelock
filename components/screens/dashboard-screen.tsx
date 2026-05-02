@@ -25,16 +25,9 @@ import {
   StatusBadge,
 } from "@/components/tradelock-ui";
 import { useToast } from "@/components/toast-provider";
+import { getCountryFlag } from "@/lib/country-flags";
 import { formatSettlementTokenAmount, settlementTokenSymbol } from "@/lib/settlement-token";
 import { getTxExplorerUrl, shortenHash } from "@/lib/explorer";
-
-function flagFor(name: string) {
-  if (name.includes("GlobalImport")) return "🇸🇬";
-  if (name.includes("Dubai")) return "🇦🇪";
-  if (name.includes("Ningbo") || name.includes("Shenzhen")) return "🇨🇳";
-  if (name.includes("Quality")) return "🇩🇪";
-  return "🌐";
-}
 
 function parseAmount(value: string) {
   return Number(value.replace(/[^0-9.]/g, ""));
@@ -356,11 +349,11 @@ export function DashboardDesktopScreen({
                       <td className="px-3 py-3 font-medium text-[11px] text-white">{deal.id}</td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2 text-[11px]">
-                          <span>{flagFor(deal.buyer)}</span>
+                          <span>{getCountryFlag(deal.buyerLocation, deal.buyer)}</span>
                           <span>{deal.buyer}</span>
                         </div>
                         <div className="mt-0.5 flex items-center gap-2 text-[10px] text-slate-400">
-                          <span>{flagFor(deal.seller)}</span>
+                          <span>{getCountryFlag(deal.sellerLocation, deal.seller)}</span>
                           <span>{deal.seller}</span>
                         </div>
                       </td>
@@ -400,7 +393,7 @@ export function DashboardDesktopScreen({
 
               <div className="border-b border-white/8 py-3 xl:border-b-0 xl:border-r xl:px-4 xl:py-0">
                 <div className="text-[10px] text-slate-400">Buyer</div>
-                <div className="mt-1 flex items-start gap-2 text-[12px] text-white"><span>{flagFor(liveSelectedDeal.buyer)}</span><span>{liveSelectedDeal.buyer}</span></div>
+                <div className="mt-1 flex items-start gap-2 text-[12px] text-white"><span>{getCountryFlag(liveSelectedDeal.buyerLocation, liveSelectedDeal.buyer)}</span><span>{liveSelectedDeal.buyer}</span></div>
                 <div className="text-[10px] text-slate-400">{liveSelectedDeal.buyerLocation}</div>
                 <div className="mt-5 text-[10px] text-slate-400">Proof Submitted</div>
                 <div className="mt-1 flex items-center gap-2 text-[12px] text-white"><FileText className="h-4 w-4 text-slate-400" />{liveSelectedDeal.proofFile}</div>
@@ -408,7 +401,7 @@ export function DashboardDesktopScreen({
 
               <div className="border-b border-white/8 py-3 xl:border-b-0 xl:border-r xl:px-4 xl:py-0">
                 <div className="text-[10px] text-slate-400">Seller</div>
-                <div className="mt-1 flex items-start gap-2 text-[12px] text-white"><span>{flagFor(liveSelectedDeal.seller)}</span><span>{liveSelectedDeal.seller}</span></div>
+                <div className="mt-1 flex items-start gap-2 text-[12px] text-white"><span>{getCountryFlag(liveSelectedDeal.sellerLocation, liveSelectedDeal.seller)}</span><span>{liveSelectedDeal.seller}</span></div>
                 <div className="text-[10px] text-slate-400">{liveSelectedDeal.sellerLocation}</div>
                 <div className="mt-5 text-[10px] text-slate-400">Proof Status</div>
                 <div className="mt-1 flex items-center gap-2 text-[12px] text-emerald-300"><CheckCircle2 className="h-4 w-4" />{liveSelectedDeal.proofStatus}</div>
@@ -800,7 +793,7 @@ export function DashboardMobileScreen({
               className="flex w-full items-center gap-3 rounded-[14px] border border-white/[0.07] bg-white/[0.025] p-3 transition active:scale-[0.98]"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-gradient-to-br from-blue-500/20 to-violet-500/20 text-[16px]">
-                {flagFor(deal.buyer)}
+                {getCountryFlag(deal.buyerLocation, deal.buyer)}
               </div>
               <div className="min-w-0 flex-1 text-left">
                 <div className="flex items-center gap-2">
@@ -842,7 +835,7 @@ export function DashboardMobileScreen({
             <div className="text-[9px] uppercase tracking-widest text-slate-500">Buyer</div>
             <div className="mt-2 flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-500/15 text-[15px]">
-                {flagFor(liveSelectedDeal.buyer)}
+                {getCountryFlag(liveSelectedDeal.buyerLocation, liveSelectedDeal.buyer)}
               </div>
               <div className="min-w-0">
                 <div className="truncate text-[11px] font-semibold text-white">{liveSelectedDeal.buyer}</div>
@@ -854,7 +847,7 @@ export function DashboardMobileScreen({
             <div className="text-[9px] uppercase tracking-widest text-slate-500">Seller</div>
             <div className="mt-2 flex items-center gap-2">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-400/20 bg-blue-500/15 text-[15px]">
-                {flagFor(liveSelectedDeal.seller)}
+                {getCountryFlag(liveSelectedDeal.sellerLocation, liveSelectedDeal.seller)}
               </div>
               <div className="min-w-0">
                 <div className="truncate text-[11px] font-semibold text-white">{liveSelectedDeal.seller}</div>
