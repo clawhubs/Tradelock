@@ -7,7 +7,7 @@ import { loadImportedWalletInputs } from "@/lib/plan-wallet-parser";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
-  if (!isAutomationAuthorized(request)) {
+  if (!(await isAutomationAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -27,7 +27,7 @@ function summarize(registry: Awaited<ReturnType<typeof reconcileImportedWallets>
 }
 
 export async function GET(request: NextRequest) {
-  if (!isAutomationAuthorized(request)) {
+  if (!(await isAutomationAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

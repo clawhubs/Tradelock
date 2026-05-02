@@ -57,6 +57,7 @@ export function SettingsDesktopScreen() {
             <SummaryRow label="Pinata" value={systemStatus.services.pinata.healthy ? "Healthy" : "Unavailable"} />
             <SummaryRow label="Supabase" value={systemStatus.services.supabase.healthy ? "Healthy" : "Unavailable"} />
             <SummaryRow label="Custody" value={systemStatus.services.custody?.healthy ? "Healthy" : "Unavailable"} />
+            <SummaryRow label="QStash" value={systemStatus.services.qstash?.healthy ? "Healthy" : "Unavailable"} />
           </div>
         </Panel>
         {custodySnapshot && (
@@ -308,6 +309,7 @@ export function SettingsMobileScreen() {
           <SummaryRow label="Pinata" value={systemStatus.services.pinata.healthy ? "Healthy" : "Unavailable"} />
           <SummaryRow label="Supabase" value={systemStatus.services.supabase.healthy ? "Healthy" : "Unavailable"} />
           <SummaryRow label="Custody" value={systemStatus.services.custody?.healthy ? "Healthy" : "Unavailable"} />
+          <SummaryRow label="QStash" value={systemStatus.services.qstash?.healthy ? "Healthy" : "Unavailable"} />
         </div>
       </motion.div>
       {custodySnapshot && (

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { getCustodialHealth } from "@/lib/custodial-engine";
-import { getPersistenceStatus } from "@/lib/tradelock-backend";
 import { hasRedisConfig } from "@/lib/env";
+import { getQStashHealth } from "@/lib/services/qstash";
 import { getPinataHealth } from "@/lib/services/pinata";
 import { getRedisClient } from "@/lib/services/redis";
 import { getSupabaseHealth } from "@/lib/services/supabase";
+import { getPersistenceStatus } from "@/lib/tradelock-backend";
 
 export const dynamic = "force-dynamic";
 
@@ -29,11 +30,12 @@ async function getRedisHealth() {
 }
 
 export async function GET() {
-  const [redis, pinata, supabase, custody] = await Promise.all([
+  const [redis, pinata, supabase, custody, qstash] = await Promise.all([
     getRedisHealth(),
     getPinataHealth(),
     getSupabaseHealth(),
     getCustodialHealth(),
+    getQStashHealth(),
   ]);
   const persistence = await getPersistenceStatus();
 
@@ -44,6 +46,7 @@ export async function GET() {
       supabase,
       persistence,
       custody,
+      qstash,
     },
   });
 }

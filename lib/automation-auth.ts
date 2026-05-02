@@ -1,6 +1,35 @@
-import { appEnv } from "@/lib/env";
+import { Receiver } from "@upstash/qstash";
 
-export function isAutomationAuthorized(request: Request) {
+import { appEnv, hasQStashConfig } from "@/lib/env";
+
+async function isQStashAuthorized(request: Request) {
+  const signature = request.headers.get("upstash-signature");
+  if (!signature || !hasQStashConfig()) {
+    return false;
+  }
+
+  try {
+    const receiver = new Receiver({
+      currentSigningKey: appEnv.qstashCurrentSigningKey,
+      nextSigningKey: appEnv.qstashNextSigningKey,
+    });
+
+    return await receiver.verify({
+      signature,
+      body: await request.clone().text(),
+      url: request.url,
+      upstashRegion: request.headers.get("upstash-region") ?? undefined,
+    });
+  } catch {
+    return false;
+  }
+}
+
+export async function isAutomationAuthorized(request: Request) {
+  if (await isQStashAuthorized(request)) {
+    return true;
+  }
+
   if (!appEnv.automationToken) {
     return true;
   }

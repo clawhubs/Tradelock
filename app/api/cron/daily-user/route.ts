@@ -6,7 +6,7 @@ import { runDailyUserCycle } from "@/lib/custodial-engine";
 export const dynamic = "force-dynamic";
 
 async function handle(request: NextRequest) {
-  if (!isAutomationAuthorized(request)) {
+  if (!(await isAutomationAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

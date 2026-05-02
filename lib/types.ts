@@ -183,6 +183,7 @@ export interface SystemStatus {
     supabase: ServiceHealth;
     persistence: PersistenceHealth;
     custody?: ServiceHealth;
+    qstash?: ServiceHealth;
   };
 }
 
