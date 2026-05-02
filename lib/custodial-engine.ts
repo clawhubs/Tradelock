@@ -6,6 +6,7 @@ import { arbitrumSepolia } from "viem/chains";
 
 import { appEnv, hasCustodyConfig } from "@/lib/env";
 import { getRedisClient } from "@/lib/services/redis";
+import { settlementTokenSymbol } from "@/lib/settlement-token";
 import {
   createAuditEvent,
   createDeal as createBackendDeal,
@@ -192,7 +193,7 @@ function nowIso() {
 }
 
 function formatUsdAmount(value: number) {
-  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`;
+  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${settlementTokenSymbol}`;
 }
 
 function parseDecimal(value: string) {

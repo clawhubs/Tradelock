@@ -10,6 +10,7 @@ import type {
   StatCard,
   TimelineItem,
 } from "@/lib/types";
+import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 
 function parseAmount(value: string) {
   return Number(value.replace(/[^0-9.]/g, ""));
@@ -210,6 +211,10 @@ export const deals: Deal[] = [
   },
 ];
 
+for (const deal of deals) {
+  deal.amount = withSettlementTokenSymbol(deal.amount);
+}
+
 export const disputes: Dispute[] = [
   {
     id: "DISPUTE-3C5E",
@@ -251,6 +256,10 @@ export const disputes: Dispute[] = [
     txHash: "0x34ef...ff22",
   },
 ];
+
+for (const dispute of disputes) {
+  dispute.amount = withSettlementTokenSymbol(dispute.amount);
+}
 
 export const auditEvents: AuditEvent[] = [
   {
@@ -336,6 +345,10 @@ export const auditEvents: AuditEvent[] = [
   },
 ];
 
+for (const event of auditEvents) {
+  event.asset = withSettlementTokenSymbol(event.asset);
+}
+
 export const counterparties: Counterparty[] = Object.entries(counterpartyDirectory).map(([company, profile]) => {
   const relatedDeals = deals.filter((deal) => deal.buyer === company || deal.seller === company);
   const totalVolume = relatedDeals.reduce((sum, deal) => sum + parseAmount(deal.amountRaw), 0);
@@ -366,8 +379,8 @@ const disputesOpenCount = disputes.filter((dispute) => dispute.status === "Under
 
 export const overviewStats: StatCard[] = [
   { label: "Active Deals", value: formatCount(activeDealsCount), change: "Across all current flows", tone: "blue" },
-  { label: "Escrow Volume", value: `${formatUsd(totalEscrowVolume)} USDC`, change: "Unified with deal list", tone: "green" },
-  { label: "Pending Release", value: `${formatUsd(pendingReleaseVolume)} USDC`, change: "Ready to settle", tone: "purple" },
+  { label: "Escrow Volume", value: `${formatUsd(totalEscrowVolume)} ${settlementTokenSymbol}`, change: "Unified with deal list", tone: "green" },
+  { label: "Pending Release", value: `${formatUsd(pendingReleaseVolume)} ${settlementTokenSymbol}`, change: "Ready to settle", tone: "purple" },
   { label: "Disputes Open", value: formatCount(disputesOpenCount), change: "Needs review", tone: "orange" },
 ];
 
@@ -391,7 +404,7 @@ export const dealsStats: StatCard[] = [
     change: "Escalated deals",
     tone: "red",
   },
-  { label: "Total Escrow Volume", value: `${formatUsd(totalEscrowVolume)} USDC`, change: "Same source as dashboard", tone: "blue" },
+  { label: "Total Escrow Volume", value: `${formatUsd(totalEscrowVolume)} ${settlementTokenSymbol}`, change: "Same source as dashboard", tone: "blue" },
 ];
 
 export const disputesStats: StatCard[] = [
@@ -416,7 +429,7 @@ export const disputesStats: StatCard[] = [
   },
   {
     label: "Funds Frozen",
-    value: `${formatUsd(disputes.filter((dispute) => dispute.status !== "Resolved").reduce((sum, dispute) => sum + parseAmount(dispute.amount), 0))} USDC`,
+    value: `${formatUsd(disputes.filter((dispute) => dispute.status !== "Resolved").reduce((sum, dispute) => sum + parseAmount(dispute.amount), 0))} ${settlementTokenSymbol}`,
     change: "Linked to open disputes",
     tone: "purple",
   },
@@ -512,7 +525,7 @@ export const settingsCards: SettingsCard[] = [
   {
     id: "organization",
     title: "1. Organization Profile",
-    lines: ["GlobalImport Ltd.", "Business ID GIL-882312", "Global Trade & Logistics", "Verification Status: Verified"],
+    lines: ["TradeLock Operations", "Business ID TLK-882312", "Cross-border escrow desk", "Verification Status: Verified"],
     action: "Edit Profile",
   },
   {

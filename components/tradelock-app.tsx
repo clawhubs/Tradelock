@@ -21,6 +21,7 @@ import {
   settingsCards,
 } from "@/lib/mock-data";
 import { createDealMetadataUri, resolveCounterpartyWallet } from "@/lib/tradelock-counterparty-wallets";
+import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 import { approveSettlementToken, formatSettlementAmount, getEscrowContractAddress, getInjectedProvider, getSettlementTokenAddress, getShortAddress, getWalletSnapshot, getConfiguredChainId, isEscrowContractConfigured, formatWalletError, resolveChainName, switchToConfiguredChain, writeEscrowContract } from "@/lib/tradelock-web3";
 import type { CustodySnapshot, Deal, ScreenKey, SystemStatus, TradeLockAppState, WalletState } from "@/lib/types";
 import { MobileLayout, DesktopLayout } from "@/components/tradelock-layout";
@@ -619,7 +620,7 @@ function TradeLockShell() {
                 dealId,
                 type: "Proof Anchored Onchain",
                 actor: walletState.address ?? actor ?? "TradeLock Operator",
-                asset: asset ?? payload.deal?.amount ?? "0.00 USDC",
+                asset: withSettlementTokenSymbol(asset ?? payload.deal?.amount ?? `0.00 ${settlementTokenSymbol}`),
                 status: "Proof Verified",
                 txHash,
                 proofHash: payload.proof.proofHash,

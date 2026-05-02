@@ -17,6 +17,7 @@ import type {
 } from "@/lib/types";
 import { getRedisClient } from "@/lib/services/redis";
 import { ensureSupabaseInitialized, getSupabaseStoreHealth, writeSupabaseState } from "@/lib/services/tradelock-supabase-store";
+import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 import { createDefaultState, type PersistedState } from "@/lib/tradelock-default-state";
 
 type DealInput = Partial<
@@ -68,7 +69,25 @@ function formatTimestamp(date = new Date()) {
 
 function formatAmount(amountRaw: string) {
   const value = Number(amountRaw.replace(/,/g, ""));
-  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDC`;
+  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${settlementTokenSymbol}`;
+}
+
+function normalizePersistedState(state: PersistedState): PersistedState {
+  return {
+    ...state,
+    deals: state.deals.map((deal) => ({
+      ...deal,
+      amount: withSettlementTokenSymbol(deal.amount),
+    })),
+    disputes: state.disputes.map((dispute) => ({
+      ...dispute,
+      amount: withSettlementTokenSymbol(dispute.amount),
+    })),
+    auditEvents: state.auditEvents.map((event) => ({
+      ...event,
+      asset: withSettlementTokenSymbol(event.asset),
+    })),
+  };
 }
 
 async function writeState(state: PersistedState) {
@@ -82,7 +101,8 @@ async function writeState(state: PersistedState) {
 }
 
 async function readState(): Promise<PersistedState> {
-  return ensureSupabaseInitialized(createDefaultState());
+  const state = await ensureSupabaseInitialized(createDefaultState());
+  return normalizePersistedState(state);
 }
 
 async function readAppStateCache() {
@@ -156,8 +176,8 @@ function buildOverviewStats(deals: Deal[], disputes: Dispute[]): StatCard[] {
 
   return [
     { label: "Active Deals", value: formatCount(activeDealsCount), change: "Across all current flows", tone: "blue" },
-    { label: "Escrow Volume", value: `${formatUsd(totalEscrowVolume)} USDC`, change: "Unified with deal list", tone: "green" },
-    { label: "Pending Release", value: `${formatUsd(pendingReleaseVolume)} USDC`, change: "Ready to settle", tone: "purple" },
+    { label: "Escrow Volume", value: `${formatUsd(totalEscrowVolume)} ${settlementTokenSymbol}`, change: "Unified with deal list", tone: "green" },
+    { label: "Pending Release", value: `${formatUsd(pendingReleaseVolume)} ${settlementTokenSymbol}`, change: "Ready to settle", tone: "purple" },
     { label: "Disputes Open", value: formatCount(disputesOpenCount), change: "Needs review", tone: "orange" },
   ];
 }
@@ -188,7 +208,7 @@ function buildDealsStats(deals: Deal[]): StatCard[] {
       change: "Escalated deals",
       tone: "red",
     },
-    { label: "Total Escrow Volume", value: `${formatUsd(totalEscrowVolume)} USDC`, change: "Same source as dashboard", tone: "blue" },
+    { label: "Total Escrow Volume", value: `${formatUsd(totalEscrowVolume)} ${settlementTokenSymbol}`, change: "Same source as dashboard", tone: "blue" },
   ];
 }
 
@@ -215,7 +235,7 @@ function buildDisputeStats(disputes: Dispute[]): StatCard[] {
     },
     {
       label: "Funds Frozen",
-      value: `${formatUsd(disputes.filter((dispute) => dispute.status !== "Resolved").reduce((sum, dispute) => sum + parseAmount(dispute.amount), 0))} USDC`,
+      value: `${formatUsd(disputes.filter((dispute) => dispute.status !== "Resolved").reduce((sum, dispute) => sum + parseAmount(dispute.amount), 0))} ${settlementTokenSymbol}`,
       change: "Linked to open disputes",
       tone: "purple",
     },
@@ -436,7 +456,7 @@ export async function createDispute(input: Partial<Dispute>) {
     dealId: input.dealId ?? "DEAL-UNKNOWN",
     buyer: input.buyer ?? "Unknown Buyer",
     seller: input.seller ?? "Unknown Seller",
-    amount: input.amount ?? "0.00 USDC",
+    amount: withSettlementTokenSymbol(input.amount ?? "0.00 tUSD"),
     reason: input.reason ?? "Manual dispute created",
     evidenceStatus: input.evidenceStatus ?? "Evidence Submitted",
     status: input.status ?? "Under Review",
@@ -464,7 +484,7 @@ export async function createAuditEvent(input: Partial<AuditEvent>) {
     dealId: input.dealId ?? "DEAL-UNKNOWN",
     type: input.type ?? "Manual Event",
     actor: input.actor ?? "TradeLock Operator",
-    asset: input.asset ?? "0.00 USDC",
+    asset: withSettlementTokenSymbol(input.asset ?? "0.00 tUSD"),
     status: input.status ?? "Confirmed",
     block: input.block ?? `${24570000 + state.auditEvents.length + 1}`,
     timestamp,

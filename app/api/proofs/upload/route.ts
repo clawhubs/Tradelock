@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createAuditEvent, getDeal, updateDeal } from "@/lib/tradelock-backend";
+import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 import { createProofHash, uploadFileToPinata } from "@/lib/services/pinata";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,10 @@ export async function POST(request: Request) {
     dealId: dealIdValue,
     type: "Proof Uploaded",
     actor: typeof actor === "string" ? actor : "TradeLock Operator",
-    asset: typeof asset === "string" ? asset : existingDeal?.amount ?? "0.00 USDC",
+    asset:
+      typeof asset === "string"
+        ? withSettlementTokenSymbol(asset)
+        : withSettlementTokenSymbol(existingDeal?.amount ?? `0.00 ${settlementTokenSymbol}`),
     status: "Submitted",
     proofHash,
     proofFile: fileEntry.name,

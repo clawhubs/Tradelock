@@ -25,6 +25,7 @@ import {
   StatusBadge,
 } from "@/components/tradelock-ui";
 import { useToast } from "@/components/toast-provider";
+import { settlementTokenSymbol } from "@/lib/settlement-token";
 
 function flagFor(name: string) {
   if (name.includes("GlobalImport")) return "🇸🇬";
@@ -347,7 +348,7 @@ export function DashboardDesktopScreen({
                         </div>
                       </td>
                       <td className="px-3 py-3 text-[11px]">{deal.amountRaw}</td>
-                      <td className="px-3 py-3 text-[11px]">USDC</td>
+                      <td className="px-3 py-3 text-[11px]">{settlementTokenSymbol}</td>
                       <td className="px-3 py-3">
                         <StatusBadge status={deal.status} compact />
                       </td>

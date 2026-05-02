@@ -107,7 +107,7 @@ export function SettingsDesktopScreen() {
 type ProfileTile = { icon: LucideIcon; label: string; description: string };
 
 const accountItems: ProfileTile[] = [
-  { icon: Building2, label: "Organization", description: "TradeLock SG Pte Ltd · Verified" },
+  { icon: Building2, label: "Organization", description: "TradeLock Operations · Verified" },
   { icon: Users2, label: "Counterparties", description: "Manage trusted partners · 8 active" },
   { icon: FileSearch2, label: "Audit Trail", description: "On-chain event history · 142 events" },
 ];
@@ -120,6 +120,14 @@ const preferenceItems: ProfileTile[] = [
 
 export function SettingsMobileScreen() {
   const { systemStatus, custodySnapshot, walletState, connectWallet, disconnectWallet, switchWalletNetwork, isWalletBusy } = useTradeLockData();
+  const featuredWallet = custodySnapshot?.activeWalletRows[0];
+  const featuredInitials = featuredWallet
+    ? featuredWallet.company
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("")
+    : "TL";
 
   return (
     <div className="space-y-4">
@@ -134,12 +142,12 @@ export function SettingsMobileScreen() {
         <div className="pointer-events-none absolute inset-x-[20%] top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(120,170,255,0.5),transparent)]" />
         <div className="relative flex items-center gap-4">
           <div className="relative flex h-16 w-16 items-center justify-center rounded-full border border-blue-400/40 bg-[linear-gradient(135deg,#1e56dc,#103ea7)] text-[1.45rem] font-semibold text-white shadow-[0_8px_24px_rgba(37,99,235,0.45)]">
-            JD
+            {featuredInitials}
             <span className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full border-2 border-[#020b1a] bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="display-font text-[1.2rem] font-semibold leading-tight text-white">John Doe</div>
-            <div className="text-[11px] text-slate-400">Procurement Lead · GlobalImport Ltd.</div>
+            <div className="display-font text-[1.2rem] font-semibold leading-tight text-white">{featuredWallet?.company ?? "TradeLock Operations"}</div>
+            <div className="text-[11px] text-slate-400">{featuredWallet ? `${featuredWallet.role} · ${featuredWallet.countryName}` : "Custodial network operator"}</div>
             <div className="mt-1.5 inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold tracking-widest text-emerald-300">
               <ShieldCheck className="h-2.5 w-2.5" />
               VERIFIED BUSINESS

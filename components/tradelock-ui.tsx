@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 
 import arbitrumLogo from "@/arbitrum-arb-logo.png";
+import { settlementTokenSymbol, withSettlementTokenSymbol } from "@/lib/settlement-token";
 import type { CustodyActivityItem, NavItem, ScreenKey, SettingsCard, StatCard, StatusKey, ToneKey, WalletState } from "@/lib/types";
 
 export const toneClasses: Record<ToneKey, string> = {
@@ -336,13 +337,13 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
 }
 
 const txTickerItems = [
-  "DEAL-7F3A · $42,000 USDC Secured · GlobalImport SG ↔ Shenzhen Parts CN",
+  `DEAL-7F3A · $42,000 ${settlementTokenSymbol} Secured · GlobalImport SG ↔ Shenzhen Parts CN`,
   "DEAL-4B2C · Proof Verified on Arbitrum · Dubai Corp UAE ↔ Ningbo Factory CN",
-  "DEAL-9A3F · $78,500 USDC Released · Quality GmbH DE ↔ Cairo Trade EG",
-  "New Deal · $125,000 USDC Initiated · Singapore Trade ↔ Frankfurt Logistics DE",
+  `DEAL-9A3F · $78,500 ${settlementTokenSymbol} Released · Quality GmbH DE ↔ Cairo Trade EG`,
+  `New Deal · $125,000 ${settlementTokenSymbol} Initiated · Singapore Trade ↔ Frankfurt Logistics DE`,
   "DEAL-2D1B · Audit Complete · All milestones verified on Arbitrum Sepolia",
-  "DEAL-5C7D · $33,250 USDC Funded · Seoul Electronics KR ↔ Amsterdam BV NL",
-  "DEAL-8E2A · $61,800 USDC · Proof submitted · Lagos Imports NG ↔ Mumbai Trade IN",
+  `DEAL-5C7D · $33,250 ${settlementTokenSymbol} Funded · Seoul Electronics KR ↔ Amsterdam BV NL`,
+  `DEAL-8E2A · $61,800 ${settlementTokenSymbol} · Proof submitted · Lagos Imports NG ↔ Mumbai Trade IN`,
 ];
 
 function formatTickerItem(item: CustodyActivityItem) {
@@ -387,7 +388,7 @@ export function TxTicker({ items }: { items?: CustodyActivityItem[] }) {
 function NotificationDropdown({ open, onClose }: { open: boolean; onClose: () => void }) {
   const notifications = [
     { id: 1, title: "Proof Verified", body: "DEAL-7F3A verified on Arbitrum Sepolia", time: "10m ago", color: "bg-emerald-400" },
-    { id: 2, title: "New Deal Created", body: "DEAL-9A3F initialized for $125,000 USDC", time: "1h ago", color: "bg-blue-400" },
+    { id: 2, title: "New Deal Created", body: withSettlementTokenSymbol("DEAL-9A3F initialized for $125,000 USDC"), time: "1h ago", color: "bg-blue-400" },
     { id: 3, title: "Dispute Opened", body: "DEAL-3C5E quality issue raised", time: "2h ago", color: "bg-orange-400" },
   ];
   return (

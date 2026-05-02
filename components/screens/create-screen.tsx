@@ -4,13 +4,14 @@ import { CheckCircle2, ChevronRight, FileBadge2, FileCheck2, HandCoins, ShieldAl
 
 import { useTradeLockData } from "@/components/tradelock-data-provider";
 import { ActionButton, MobilePageHeader, Panel, StatusBadge, SummaryRow } from "@/components/tradelock-ui";
+import { settlementTokenSymbol } from "@/lib/settlement-token";
 
 export function CreateDesktopScreen({ onCreated }: { onCreated?: (dealId: string) => void }) {
   const { data, createDemoDeal, isSyncing, walletState } = useTradeLockData();
   const { createFields, createSteps } = data;
   const createSections = [
     { title: "Deal Type", value: "Sale of Goods - Electronics", icon: FileBadge2 },
-    { title: "Amount & Asset", value: "5,000 USDC on Arbitrum Sepolia", icon: HandCoins },
+    { title: "Amount & Asset", value: `5,000 ${walletState.settlementSymbol} on Arbitrum Sepolia`, icon: HandCoins },
     { title: "Milestones", value: "3 milestones • 30% / 40% / 30%", icon: TimerReset },
     { title: "Proof Requirements", value: "Invoice, Packing List, Bill of Lading", icon: FileCheck2 },
     { title: "Dispute Rule", value: "Escalation + Arbitration (7 days)", icon: ShieldAlert },
@@ -85,9 +86,9 @@ export function CreateDesktopScreen({ onCreated }: { onCreated?: (dealId: string
             <SummaryRow label="Settlement Asset" value={walletState.settlementSymbol} />
             <SummaryRow label="Network" value="Arbitrum Sepolia" />
             <SummaryRow label="Milestones" value="3 stages" />
-            <SummaryRow label="Platform Fee (0.35%)" value="17.50 USDC" />
-            <SummaryRow label="Escrow Network Fee" value="5.20 USDC" />
-            <SummaryRow label="Total Fee" value="22.70 USDC" emphasized />
+            <SummaryRow label="Platform Fee (0.35%)" value={`17.50 ${walletState.settlementSymbol}`} />
+            <SummaryRow label="Escrow Network Fee" value={`5.20 ${walletState.settlementSymbol}`} />
+            <SummaryRow label="Total Fee" value={`22.70 ${walletState.settlementSymbol}`} emphasized />
           </div>
         </Panel>
         <Panel title="Deployment Readiness">
@@ -144,9 +145,9 @@ export function CreateMobileScreen({ onCreated }: { onCreated?: (dealId: string)
       </div>
         <Panel title="Review & Create">
         <div className="space-y-3 text-sm">
-          <SummaryRow label="Buyer" value="GlobalImport Ltd." />
-          <SummaryRow label="Seller" value="Shenzhen Parts Co." />
-          <SummaryRow label="Amount" value="5,000 USDC" />
+          <SummaryRow label="Buyer" value={data.createFields[0]?.value ?? "Configured Buyer"} />
+          <SummaryRow label="Seller" value={data.createFields[4]?.value ?? "Configured Seller"} />
+          <SummaryRow label="Amount" value={`5,000 ${settlementTokenSymbol}`} />
         </div>
       </Panel>
       <ActionButton tone="blue" label={isSyncing ? "Creating..." : "Create Escrow Deal"} icon={CheckCircle2} onClick={handleCreate} />

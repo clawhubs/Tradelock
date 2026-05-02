@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { withSettlementTokenSymbol } from "@/lib/settlement-token";
 import type { ScreenKey } from "@/lib/types";
 
 type CommandItem = {
@@ -33,9 +34,9 @@ const commands: CommandItem[] = [
   { label: "Counterparties", description: "Manage trusted partners", icon: Users2, screen: "counterparties", category: "Navigation" },
   { label: "Settings", description: "Configure your workspace", icon: Settings2, screen: "settings", category: "Navigation" },
   { label: "Create New Deal", description: "Set up a new escrow agreement", icon: Plus, screen: "create", category: "Actions" },
-  { label: "DEAL-7F3A", description: "GlobalImport ↔ Shenzhen Parts · $42,000 USDC", icon: FileBadge2, screen: "deals", category: "Recent Deals" },
-  { label: "DEAL-4B2C", description: "Dubai Corp ↔ Ningbo Factory · $78,500 USDC", icon: FileBadge2, screen: "deals", category: "Recent Deals" },
-  { label: "DEAL-9A3F", description: "Quality GmbH ↔ Cairo Trade · $33,250 USDC", icon: FileBadge2, screen: "deals", category: "Recent Deals" },
+  { label: "DEAL-7F3A", description: withSettlementTokenSymbol("GlobalImport ↔ Shenzhen Parts · $42,000 USDC"), icon: FileBadge2, screen: "deals", category: "Recent Deals" },
+  { label: "DEAL-4B2C", description: withSettlementTokenSymbol("Dubai Corp ↔ Ningbo Factory · $78,500 USDC"), icon: FileBadge2, screen: "deals", category: "Recent Deals" },
+  { label: "DEAL-9A3F", description: withSettlementTokenSymbol("Quality GmbH ↔ Cairo Trade · $33,250 USDC"), icon: FileBadge2, screen: "deals", category: "Recent Deals" },
 ];
 
 export function CommandPalette({
