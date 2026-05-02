@@ -1010,9 +1010,7 @@ function TradeLockShell() {
     }
 
     const latestDealId = data.deals[0].id;
-    const selectedIsVisibleOnDashboard = data.deals.slice(0, 4).some((deal) => deal.id === selectedDealId);
-
-    if (!selectedDealId || !selectedIsVisibleOnDashboard) {
+    if (selectedDealId !== latestDealId) {
       setSelectedDealId(latestDealId);
     }
   }, [activeScreen, data.deals, selectedDealId]);

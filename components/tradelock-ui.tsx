@@ -413,15 +413,15 @@ export function TxTicker({ items }: { items?: CustodyActivityItem[] }) {
   const tickerItems = items && items.length > 0 ? items.map(formatTickerItem) : txTickerItems;
 
   return (
-    <div className="overflow-hidden border-b border-white/[0.05] bg-[rgba(2,7,20,0.5)] py-[7px]">
+    <div className="overflow-hidden border-b border-white/[0.08] bg-[linear-gradient(180deg,rgba(9,18,42,0.92),rgba(6,14,34,0.96))] py-[7px]">
       <div
         className="flex items-center whitespace-nowrap"
         style={{ animation: "ticker-scroll 50s linear infinite" }}
       >
         {[...tickerItems, ...tickerItems].map((item, i) => (
           <span key={i} className="flex shrink-0 items-center">
-            <span className="mx-5 text-[9px] text-blue-500/50">◆</span>
-            <span className="text-[11px] text-slate-500">{item}</span>
+            <span className="mx-5 text-[9px] text-cyan-300/80">◆</span>
+            <span className="text-[11px] font-medium text-slate-200/95">{item}</span>
           </span>
         ))}
       </div>

@@ -34,6 +34,18 @@ body {
   font-family: var(--font-body), sans-serif;
 }
 
+.text-slate-500 {
+  color: #9fb2d1 !important;
+}
+
+.text-slate-400 {
+  color: #bfd0e8 !important;
+}
+
+.text-slate-300 {
+  color: #dbe7f8 !important;
+}
+
 @media (min-width: 1280px) {
   body {
     background:
