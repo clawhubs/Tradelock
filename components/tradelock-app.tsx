@@ -395,6 +395,13 @@ function TradeLockShell() {
     }
   }
 
+  async function syncWorkspaceSnapshot({ notifyOnError = false }: { notifyOnError?: boolean } = {}) {
+    await Promise.all([
+      syncAppState({ notifyOnError }),
+      syncCustodySnapshot({ notifyOnError }),
+    ]);
+  }
+
   async function createDemoDeal(): Promise<Deal | null> {
     const provider = await ensureWalletReady({ allowDisconnectedFallback: false });
 
@@ -941,15 +948,13 @@ function TradeLockShell() {
   }, [activeScreen]);
 
   useEffect(() => {
-    syncAppState({ notifyOnError: false });
+    syncWorkspaceSnapshot({ notifyOnError: false });
     syncSystemStatus();
-    syncCustodySnapshot();
   }, []);
 
   useEffect(() => {
     const refreshMarket = () => {
-      void syncAppState({ notifyOnError: false });
-      void syncCustodySnapshot();
+      void syncWorkspaceSnapshot({ notifyOnError: false });
     };
     const refreshStatus = () => {
       void syncSystemStatus();
@@ -958,7 +963,7 @@ function TradeLockShell() {
       refreshMarket();
       refreshStatus();
     };
-    const marketInterval = window.setInterval(refreshMarket, 10_000);
+    const marketInterval = window.setInterval(refreshMarket, 3_000);
     const statusInterval = window.setInterval(refreshStatus, 60_000);
 
     window.addEventListener("focus", handleFocus);
