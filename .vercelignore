@@ -1,0 +1,8 @@
+.env*
+Plan/
+supabase/
+playwright-report/
+test-results/
+coverage/
+data/
+*.log
