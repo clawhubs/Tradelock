@@ -1,7 +1,10 @@
 "use client";
 
-import { ExternalLink, Filter, Plus, Upload } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Clock3, ExternalLink, Filter, Upload } from "lucide-react";
 
+import { downloadCsv } from "@/lib/browser-export";
+import { dateRangeLabels, isWithinDateRange, matchesQuery, nextDateRange, paginateItems, type DateRangeKey } from "@/lib/list-controls";
 import type { Counterparty } from "@/lib/types";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
 import {
@@ -28,7 +31,65 @@ export function CounterpartiesDesktopScreen({
 }) {
   const { data } = useTradeLockData();
   const { counterparties, counterpartyFilters, counterpartyStats } = data;
+  const [activeFilter, setActiveFilter] = useState(counterpartyFilters[0] ?? "All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeKey>("all");
+  const [linkedDealsOnly, setLinkedDealsOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const filteredCounterparties = useMemo(
+    () =>
+      counterparties.filter((entry) => {
+        const matchesFilter =
+          activeFilter === "All"
+            ? true
+            : activeFilter === "Buyers"
+              ? entry.role === "Buyer"
+              : activeFilter === "Sellers"
+                ? entry.role === "Seller"
+                : activeFilter === "Trusted"
+                  ? entry.status === "Trusted" || entry.status === "Verified"
+                  : isWithinDateRange(entry.lastDeal, "30d");
+
+        return (
+          matchesFilter &&
+          matchesQuery([entry.company, entry.handle, entry.role, entry.location, entry.wallet, entry.escrowVolume], searchQuery) &&
+          (dateRange === "all" || isWithinDateRange(entry.lastDeal, dateRange)) &&
+          (!linkedDealsOnly || entry.totalDeals > 0)
+        );
+      }),
+    [activeFilter, counterparties, dateRange, linkedDealsOnly, searchQuery],
+  );
+  const paginatedCounterparties = useMemo(() => paginateItems(filteredCounterparties, page, 8), [filteredCounterparties, page]);
   const walletUrl = getAddressExplorerUrl(selectedCounterparty.wallet);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, dateRange, linkedDealsOnly, searchQuery]);
+
+  useEffect(() => {
+    if (!filteredCounterparties.some((entry) => entry.company === selectedCounterparty.company) && filteredCounterparties[0]) {
+      onSelectCounterparty(filteredCounterparties[0].company);
+    }
+  }, [filteredCounterparties, onSelectCounterparty, selectedCounterparty.company]);
+
+  function exportCounterpartiesCsv() {
+    downloadCsv(
+      "tradelock-counterparties.csv",
+      ["Company", "Handle", "Role", "Location", "Trust Score", "Status", "Total Deals", "Escrow Volume", "Last Deal", "Wallet"],
+      filteredCounterparties.map((entry) => [
+        entry.company,
+        entry.handle,
+        entry.role,
+        entry.location,
+        entry.trustScore,
+        entry.status,
+        entry.totalDeals,
+        entry.escrowVolume,
+        entry.lastDeal,
+        entry.wallet,
+      ]),
+    );
+  }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -36,12 +97,15 @@ export function CounterpartiesDesktopScreen({
         <StatGrid stats={counterpartyStats} columns="xl:grid-cols-5" compact />
         <Panel>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <FilterRow filters={counterpartyFilters} />
+            <FilterRow filters={counterpartyFilters} activeFilter={activeFilter} onSelect={setActiveFilter} />
             <div className="flex flex-wrap gap-2">
-              <ToolbarButton label="Filter" icon={Filter} />
-              <ToolbarButton label="Export CSV" icon={Upload} />
-              <ToolbarButton label="Invite" icon={Plus} />
+              <ToolbarButton label={linkedDealsOnly ? "Linked Deals Only" : "All Counterparties"} icon={Filter} onClick={() => setLinkedDealsOnly((value) => !value)} />
+              <ToolbarButton label="Export CSV" icon={Upload} onClick={exportCounterpartiesCsv} disabled={filteredCounterparties.length === 0} />
+              <ToolbarButton label={dateRangeLabels[dateRange]} icon={Clock3} onClick={() => setDateRange((value) => nextDateRange(value))} />
             </div>
+          </div>
+          <div className="mb-3">
+            <SearchField placeholder="Search companies, handles, wallets..." value={searchQuery} onChange={setSearchQuery} />
           </div>
           <div className="overflow-hidden rounded-[8px] border border-white/[0.08]">
             <table className="min-w-full text-left text-[12px]">
@@ -57,7 +121,7 @@ export function CounterpartiesDesktopScreen({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {counterparties.map((entry) => (
+                {paginatedCounterparties.items.map((entry) => (
                   <tr
                     key={entry.company}
                     onClick={() => onSelectCounterparty(entry.company)}
@@ -75,10 +139,26 @@ export function CounterpartiesDesktopScreen({
                     <td className="px-4 py-4 text-[11px] text-slate-400">{entry.lastDeal}</td>
                   </tr>
                 ))}
+                {paginatedCounterparties.items.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
+                      No counterparties match the current filters.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-          <Pager label={`Showing 1 to ${counterparties.length} of ${counterparties.length} counterparties`} />
+          <Pager
+            label={
+              paginatedCounterparties.totalItems === 0
+                ? "Showing 0 counterparties"
+                : `Showing ${paginatedCounterparties.startIndex + 1} to ${paginatedCounterparties.endIndex} of ${paginatedCounterparties.totalItems} counterparties`
+            }
+            currentPage={paginatedCounterparties.page}
+            totalPages={paginatedCounterparties.totalPages}
+            onPageChange={setPage}
+          />
         </Panel>
       </div>
 
@@ -136,15 +216,41 @@ export function CounterpartiesMobileScreen({
   onSelectCounterparty: (company: string) => void;
 }) {
   const { data } = useTradeLockData();
-  const { counterparties } = data;
+  const { counterparties, counterpartyFilters } = data;
+  const [activeFilter, setActiveFilter] = useState(counterpartyFilters[0] ?? "All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const filteredCounterparties = useMemo(
+    () =>
+      counterparties.filter((entry) => {
+        const matchesFilter =
+          activeFilter === "All"
+            ? true
+            : activeFilter === "Buyers"
+              ? entry.role === "Buyer"
+              : activeFilter === "Sellers"
+                ? entry.role === "Seller"
+                : activeFilter === "Trusted"
+                  ? entry.status === "Trusted" || entry.status === "Verified"
+                  : isWithinDateRange(entry.lastDeal, "30d");
+
+        return matchesFilter && matchesQuery([entry.company, entry.handle, entry.location, entry.wallet], searchQuery);
+      }),
+    [activeFilter, counterparties, searchQuery],
+  );
+  const paginatedCounterparties = useMemo(() => paginateItems(filteredCounterparties, page, 5), [filteredCounterparties, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, searchQuery]);
 
   return (
     <div className="space-y-5">
       <MobilePageHeader title="Counterparties" description="Browse trusted buyers and sellers." />
-      <SearchField placeholder="Search counterparties..." />
-      <FilterRow filters={["All", "Buyers", "Sellers", "Trusted"]} compact />
+      <SearchField placeholder="Search counterparties..." value={searchQuery} onChange={setSearchQuery} />
+      <FilterRow filters={counterpartyFilters} compact activeFilter={activeFilter} onSelect={setActiveFilter} />
       <div className="space-y-3">
-        {counterparties.slice(0, 5).map((entry) => (
+        {paginatedCounterparties.items.map((entry) => (
           <MobileListCard
             key={entry.company}
             active={selectedCounterparty.company === entry.company}
@@ -156,6 +262,16 @@ export function CounterpartiesMobileScreen({
           />
         ))}
       </div>
+      <Pager
+        label={
+          paginatedCounterparties.totalItems === 0
+            ? "Showing 0 counterparties"
+            : `Showing ${paginatedCounterparties.startIndex + 1} to ${paginatedCounterparties.endIndex} of ${paginatedCounterparties.totalItems} counterparties`
+        }
+        currentPage={paginatedCounterparties.page}
+        totalPages={paginatedCounterparties.totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

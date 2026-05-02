@@ -18,15 +18,105 @@ import {
 
 import { useTradeLockData } from "@/components/tradelock-data-provider";
 import { ActionButton, ArbitrumBadge, Panel, SettingsTile, StatusBadge, SummaryRow } from "@/components/tradelock-ui";
+import { downloadCsv } from "@/lib/browser-export";
 
 export function SettingsDesktopScreen() {
   const { data, systemStatus, custodySnapshot, walletState, connectWallet, disconnectWallet, switchWalletNetwork, isWalletBusy } = useTradeLockData();
   const { settings } = data;
+  const liveSettingsCards = [
+    {
+      id: "organization",
+      title: "1. Organization Profile",
+      lines: [
+        "TradeLock Operations",
+        `Managed Wallets: ${custodySnapshot?.activeWallets ?? 0}`,
+        `Counterparties: ${data.counterparties.length}`,
+        `Verification Status: ${settings.workspaceSummary[0]?.value ?? "Verified"}`,
+      ],
+      action: "View Live Status",
+    },
+    {
+      id: "team",
+      title: "2. Team & Roles",
+      lines: [
+        `Buyers: ${custodySnapshot?.activeBuyers ?? 0}`,
+        `Sellers: ${custodySnapshot?.activeSellers ?? 0}`,
+        `Arbitrators: ${custodySnapshot?.activeArbitrators ?? 0}`,
+        `Recent Activity Items: ${custodySnapshot?.recentActivity.length ?? 0}`,
+      ],
+      action: "Review Activity",
+    },
+    {
+      id: "wallet",
+      title: "3. Wallet & Network",
+      lines: [
+        `Settlement Asset: ${walletState.settlementSymbol}`,
+        `Default Network: ${walletState.chainName}`,
+        `Connected Wallet: ${walletState.shortAddress}`,
+        `Escrow Contract: ${walletState.contractReady ? "Configured" : "Pending"}`,
+      ],
+      action: "Manage Wallets",
+    },
+    {
+      id: "security",
+      title: "4. Security & Access",
+      lines: [
+        `Custody Engine: ${systemStatus.services.custody?.healthy ? "Healthy" : "Pending"}`,
+        `Redis Cache: ${systemStatus.services.redis.healthy ? "Healthy" : "Unavailable"}`,
+        `Supabase Store: ${systemStatus.services.supabase.healthy ? "Healthy" : "Unavailable"}`,
+        `QStash Schedules: ${systemStatus.services.qstash?.healthy ? "Active" : "Unavailable"}`,
+      ],
+      action: "Review Controls",
+    },
+    {
+      id: "notifications",
+      title: "5. Notifications",
+      lines: [
+        `Live Feed Items: ${custodySnapshot?.recentActivity.length ?? 0}`,
+        `Auto Refresh: every 30 seconds`,
+        `Daily User Start: ${custodySnapshot?.dailyUserStartDate ?? "Not scheduled"}`,
+        `Latest Persistence: ${systemStatus.services.persistence.activeStore}`,
+      ],
+      action: "Inspect Automation",
+    },
+    {
+      id: "dispute-rules",
+      title: "6. Dispute Preferences",
+      lines: [
+        `Open Disputes: ${data.disputes.filter((dispute) => dispute.status !== "Resolved").length}`,
+        `Proof-linked Events: ${data.auditEvents.filter((event) => event.proofHash || event.proofFile).length}`,
+        `Pool ETH: ${custodySnapshot?.poolEthBalance ?? "0"} ETH`,
+        `Pool tUSD: ${custodySnapshot?.poolTusdBalance ?? "0"} tUSD`,
+      ],
+      action: "Review Escrow Health",
+    },
+  ];
+
+  function exportSettingsCsv() {
+    downloadCsv(
+      "tradelock-settings.csv",
+      ["Section", "Label", "Value"],
+      [
+        ...settings.workspaceSummary.map((item) => ["Workspace", item.label, item.value]),
+        ...settings.securitySummary.map((item) => ["Security", item.label, item.value]),
+        ["Services", "Persistence", systemStatus.services.persistence.activeStore],
+        ["Services", "Redis", systemStatus.services.redis.healthy ? "Healthy" : "Unavailable"],
+        ["Services", "Pinata", systemStatus.services.pinata.healthy ? "Healthy" : "Unavailable"],
+        ["Services", "Supabase", systemStatus.services.supabase.healthy ? "Healthy" : "Unavailable"],
+        ["Wallet", "Account", walletState.shortAddress],
+        ["Wallet", "Network", walletState.chainName],
+        ["Wallet", "Settlement Balance", `${walletState.settlementBalance} ${walletState.settlementSymbol}`],
+        ["Custody", "Active Wallets", `${custodySnapshot?.activeWallets ?? 0}`],
+        ["Custody", "Pool ETH", `${custodySnapshot?.poolEthBalance ?? "0"} ETH`],
+        ["Custody", "Pool tUSD", `${custodySnapshot?.poolTusdBalance ?? "0"} tUSD`],
+      ],
+    );
+  }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="grid gap-4 md:grid-cols-2">
-        {settings.cards.map((card) => (
+        {liveSettingsCards.map((card) => (
           <SettingsTile key={card.id} card={card} />
         ))}
       </div>
@@ -38,7 +128,7 @@ export function SettingsDesktopScreen() {
               <SummaryRow key={item.label} label={item.label} value={item.value} />
             ))}
             <div className="grid gap-3 pt-2">
-              <ActionButton tone="blue" label="Export Settings" icon={Upload} />
+              <ActionButton tone="blue" label="Export Settings" icon={Upload} onClick={exportSettingsCsv} />
             </div>
           </div>
         </Panel>
@@ -106,20 +196,8 @@ export function SettingsDesktopScreen() {
 
 type ProfileTile = { icon: LucideIcon; label: string; description: string };
 
-const accountItems: ProfileTile[] = [
-  { icon: Building2, label: "Organization", description: "TradeLock Operations · Verified" },
-  { icon: Users2, label: "Counterparties", description: "Manage trusted partners · 8 active" },
-  { icon: FileSearch2, label: "Audit Trail", description: "On-chain event history · 142 events" },
-];
-
-const preferenceItems: ProfileTile[] = [
-  { icon: Shield, label: "Security", description: "2FA, signing keys, sessions" },
-  { icon: Bell, label: "Notifications", description: "Email, Slack, on-chain alerts" },
-  { icon: ShieldAlert, label: "Dispute Rules", description: "SLA, arbitration policy" },
-];
-
 export function SettingsMobileScreen() {
-  const { systemStatus, custodySnapshot, walletState, connectWallet, disconnectWallet, switchWalletNetwork, isWalletBusy } = useTradeLockData();
+  const { data, systemStatus, custodySnapshot, walletState, connectWallet, disconnectWallet, switchWalletNetwork, isWalletBusy } = useTradeLockData();
   const featuredWallet = custodySnapshot?.activeWalletRows[0];
   const featuredInitials = featuredWallet
     ? featuredWallet.company
@@ -128,6 +206,16 @@ export function SettingsMobileScreen() {
         .map((part) => part[0]?.toUpperCase() ?? "")
         .join("")
     : "TL";
+  const accountItems: ProfileTile[] = [
+    { icon: Building2, label: "Organization", description: `${data.settings.workspaceSummary[0]?.value ?? "Verified"} · ${custodySnapshot?.activeWallets ?? 0} managed wallets` },
+    { icon: Users2, label: "Counterparties", description: `${data.counterparties.length} live profiles · ${custodySnapshot?.activeBuyers ?? 0} buyers / ${custodySnapshot?.activeSellers ?? 0} sellers` },
+    { icon: FileSearch2, label: "Audit Trail", description: `${data.auditEvents.length} on-chain event records` },
+  ];
+  const preferenceItems: ProfileTile[] = [
+    { icon: Shield, label: "Security", description: systemStatus.services.custody?.healthy ? "Custody healthy, encrypted wallet store" : "Custody checks pending" },
+    { icon: Bell, label: "Notifications", description: `${custodySnapshot?.recentActivity.length ?? 0} recent activity item(s) in live feed` },
+    { icon: ShieldAlert, label: "Dispute Rules", description: `${data.disputes.filter((dispute) => dispute.status !== "Resolved").length} open dispute(s) under review` },
+  ];
 
   return (
     <div className="space-y-4">

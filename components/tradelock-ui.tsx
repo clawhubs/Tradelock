@@ -246,22 +246,37 @@ export function ActionButton({
   );
 }
 
-export function FilterRow({ filters, compact = false }: { filters: string[]; compact?: boolean }) {
+export function FilterRow({
+  filters,
+  compact = false,
+  activeFilter,
+  onSelect,
+}: {
+  filters: string[];
+  compact?: boolean;
+  activeFilter?: string;
+  onSelect?: (filter: string) => void;
+}) {
   return (
     <div className="flex flex-wrap gap-2">
-      {filters.map((filter, index) => (
+      {filters.map((filter, index) => {
+        const active = activeFilter ? activeFilter === filter : index === 0;
+        return (
         <button
           key={filter}
           type="button"
+          aria-pressed={active}
+          onClick={() => onSelect?.(filter)}
           className={`rounded-[8px] border font-medium ${
-            index === 0
+            active
               ? "border-blue-400/50 bg-blue-500/18 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
               : "border-white/[0.1] bg-white/[0.025] text-slate-300 hover:bg-white/[0.045]"
           } ${compact ? "px-3 py-1.5 text-[11px]" : "px-3 py-2 text-[12px]"}`}
         >
           {filter}
         </button>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -658,19 +673,57 @@ export function InfoStack({
   );
 }
 
-export function Pager({ label }: { label: string }) {
+export function Pager({
+  label,
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  label: string;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  const pageItems =
+    totalPages <= 5
+      ? Array.from({ length: totalPages }, (_, index) => index + 1)
+      : [1, currentPage - 1, currentPage, currentPage + 1, totalPages].filter(
+          (page, index, pages) => page >= 1 && page <= totalPages && pages.indexOf(page) === index,
+        );
+
   return (
     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-400">
       <div>{label}</div>
       <div className="flex items-center gap-2">
-        {[1, 2, 3].map((page, index) => (
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(currentPage - 1, 1))}
+          disabled={currentPage === 1}
+          className="rounded-xl border border-white/10 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Prev
+        </button>
+        {pageItems.map((page) => (
           <button
             key={page}
-            className={`rounded-xl border px-3 py-2 ${index === 0 ? "border-blue-400/50 bg-blue-500/20 text-white" : "border-white/10"}`}
+            type="button"
+            onClick={() => onPageChange(page)}
+            aria-pressed={page === currentPage}
+            className={`rounded-xl border px-3 py-2 ${
+              page === currentPage ? "border-blue-400/50 bg-blue-500/20 text-white" : "border-white/10"
+            }`}
           >
             {page}
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(currentPage + 1, totalPages))}
+          disabled={currentPage === totalPages}
+          className="rounded-xl border border-white/10 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Next
+        </button>
       </div>
     </div>
   );

@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Clock3, ExternalLink, Filter, Upload } from "lucide-react";
 
+import { downloadCsv } from "@/lib/browser-export";
+import { dateRangeLabels, isWithinDateRange, matchesQuery, nextDateRange, paginateItems, type DateRangeKey } from "@/lib/list-controls";
 import type { AuditEvent } from "@/lib/types";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
 import {
@@ -28,8 +31,70 @@ export function AuditDesktopScreen({
 }) {
   const { data } = useTradeLockData();
   const { auditEvents, auditFilters, auditStats } = data;
+  const [activeFilter, setActiveFilter] = useState(auditFilters[0] ?? "All Events");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeKey>("all");
+  const [proofOnly, setProofOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const filteredEvents = useMemo(
+    () =>
+      auditEvents.filter((event) => {
+        const matchesFilter =
+          activeFilter === "All Events"
+            ? true
+            : activeFilter === "Deal Created"
+              ? event.type.includes("Deal Created")
+              : activeFilter === "Deposit Funded"
+                ? event.type.includes("Funded")
+                : activeFilter === "Proof Uploaded"
+                  ? event.type.includes("Proof Uploaded")
+                  : activeFilter === "Proof Verified"
+                    ? event.type.includes("Verified") || event.status === "Verified"
+                    : activeFilter === "Funds Released"
+                      ? event.type.includes("Released")
+                      : event.type.includes("Dispute");
+
+        return (
+          matchesFilter &&
+          matchesQuery([event.id, event.dealId, event.type, event.actor, event.asset, event.txHash, event.proofHash], searchQuery) &&
+          isWithinDateRange(event.timestamp, dateRange) &&
+          (!proofOnly || Boolean(event.proofHash || event.proofFile))
+        );
+      }),
+    [activeFilter, auditEvents, dateRange, proofOnly, searchQuery],
+  );
+  const paginatedEvents = useMemo(() => paginateItems(filteredEvents, page, 10), [filteredEvents, page]);
   const txUrl = getTxExplorerUrl(selectedEvent.txHash);
   const proofUrl = getIpfsGatewayUrl(selectedEvent.proofHash);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, dateRange, proofOnly, searchQuery]);
+
+  useEffect(() => {
+    if (!filteredEvents.some((event) => event.id === selectedEvent.id) && filteredEvents[0]) {
+      onSelectEvent(filteredEvents[0].id);
+    }
+  }, [filteredEvents, onSelectEvent, selectedEvent.id]);
+
+  function exportAuditCsv() {
+    downloadCsv(
+      "tradelock-audit-events.csv",
+      ["Event ID", "Deal ID", "Type", "Actor", "Asset", "Block", "Status", "Timestamp", "TX Hash", "Proof Hash"],
+      filteredEvents.map((event) => [
+        event.id,
+        event.dealId,
+        event.type,
+        event.actor,
+        event.asset,
+        event.block,
+        event.status,
+        event.timestamp,
+        event.txHash,
+        event.proofHash ?? "",
+      ]),
+    );
+  }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -37,12 +102,15 @@ export function AuditDesktopScreen({
         <StatGrid stats={auditStats} columns="xl:grid-cols-5" compact />
         <Panel>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <FilterRow filters={auditFilters} />
+            <FilterRow filters={auditFilters} activeFilter={activeFilter} onSelect={setActiveFilter} />
             <div className="flex flex-wrap gap-2">
-              <ToolbarButton label="Filter" icon={Filter} />
-              <ToolbarButton label="Export CSV" icon={Upload} />
-              <ToolbarButton label="Date Range" icon={Clock3} />
+              <ToolbarButton label={proofOnly ? "Proof-linked Only" : "Proof-linked Filter"} icon={Filter} onClick={() => setProofOnly((value) => !value)} />
+              <ToolbarButton label="Export CSV" icon={Upload} onClick={exportAuditCsv} disabled={filteredEvents.length === 0} />
+              <ToolbarButton label={dateRangeLabels[dateRange]} icon={Clock3} onClick={() => setDateRange((value) => nextDateRange(value))} />
             </div>
+          </div>
+          <div className="mb-3">
+            <SearchField placeholder="Search events, deals, hashes..." value={searchQuery} onChange={setSearchQuery} />
           </div>
           <div className="data-scroll overflow-auto rounded-[8px] border border-white/[0.08]">
             <table className="min-w-[1140px] text-left text-[12px]">
@@ -59,7 +127,7 @@ export function AuditDesktopScreen({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {auditEvents.map((event) => (
+                {paginatedEvents.items.map((event) => (
                   <tr
                     key={event.id}
                     onClick={() => onSelectEvent(event.id)}
@@ -75,10 +143,26 @@ export function AuditDesktopScreen({
                     <td className="px-4 py-4 text-[11px] text-slate-400">{event.timestamp}</td>
                   </tr>
                 ))}
+                {paginatedEvents.items.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-10 text-center text-slate-400">
+                      No audit events match the current filters.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-          <Pager label={`Showing 1 to ${auditEvents.length} of ${auditEvents.length} events`} />
+          <Pager
+            label={
+              paginatedEvents.totalItems === 0
+                ? "Showing 0 events"
+                : `Showing ${paginatedEvents.startIndex + 1} to ${paginatedEvents.endIndex} of ${paginatedEvents.totalItems} events`
+            }
+            currentPage={paginatedEvents.page}
+            totalPages={paginatedEvents.totalPages}
+            onPageChange={setPage}
+          />
         </Panel>
       </div>
 
@@ -140,15 +224,45 @@ export function AuditMobileScreen({
   onSelectEvent: (id: string) => void;
 }) {
   const { data } = useTradeLockData();
-  const { auditEvents } = data;
+  const { auditEvents, auditFilters } = data;
+  const [activeFilter, setActiveFilter] = useState(auditFilters[0] ?? "All Events");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const filteredEvents = useMemo(
+    () =>
+      auditEvents.filter((event) => {
+        const matchesFilter =
+          activeFilter === "All Events"
+            ? true
+            : activeFilter === "Deal Created"
+              ? event.type.includes("Deal Created")
+              : activeFilter === "Deposit Funded"
+                ? event.type.includes("Funded")
+                : activeFilter === "Proof Uploaded"
+                  ? event.type.includes("Proof Uploaded")
+                  : activeFilter === "Proof Verified"
+                    ? event.type.includes("Verified") || event.status === "Verified"
+                    : activeFilter === "Funds Released"
+                      ? event.type.includes("Released")
+                      : event.type.includes("Dispute");
+
+        return matchesFilter && matchesQuery([event.id, event.dealId, event.type, event.actor, event.txHash], searchQuery);
+      }),
+    [activeFilter, auditEvents, searchQuery],
+  );
+  const paginatedEvents = useMemo(() => paginateItems(filteredEvents, page, 5), [filteredEvents, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, searchQuery]);
 
   return (
     <div className="space-y-5">
       <MobilePageHeader title="Audit Trail" description="Track every event and proof hash on-chain." />
-      <SearchField placeholder="Search events, deals..." />
-      <FilterRow filters={["All", "Verified", "Releases"]} compact />
+      <SearchField placeholder="Search events, deals..." value={searchQuery} onChange={setSearchQuery} />
+      <FilterRow filters={auditFilters} compact activeFilter={activeFilter} onSelect={setActiveFilter} />
       <div className="space-y-3">
-        {auditEvents.slice(0, 5).map((event) => (
+        {paginatedEvents.items.map((event) => (
           <MobileListCard
             key={event.id}
             active={selectedEvent.id === event.id}
@@ -160,6 +274,16 @@ export function AuditMobileScreen({
           />
         ))}
       </div>
+      <Pager
+        label={
+          paginatedEvents.totalItems === 0
+            ? "Showing 0 events"
+            : `Showing ${paginatedEvents.startIndex + 1} to ${paginatedEvents.endIndex} of ${paginatedEvents.totalItems} events`
+        }
+        currentPage={paginatedEvents.page}
+        totalPages={paginatedEvents.totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

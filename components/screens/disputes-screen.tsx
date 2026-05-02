@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Clock3, Filter, ShieldAlert, ShieldCheck, Upload } from "lucide-react";
 
+import { downloadCsv } from "@/lib/browser-export";
+import { dateRangeLabels, isWithinDateRange, matchesQuery, nextDateRange, paginateItems, type DateRangeKey } from "@/lib/list-controls";
 import type { Dispute } from "@/lib/types";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
 import {
@@ -28,7 +31,67 @@ export function DisputesDesktopScreen({
 }) {
   const { data } = useTradeLockData();
   const { disputeFilters, disputes, disputesStats } = data;
+  const [activeFilter, setActiveFilter] = useState(disputeFilters[0] ?? "All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeKey>("all");
+  const [evidenceOnly, setEvidenceOnly] = useState(false);
+  const [page, setPage] = useState(1);
+  const filteredDisputes = useMemo(
+    () =>
+      disputes.filter((dispute) => {
+        const matchesFilter =
+          activeFilter === "All"
+            ? true
+            : activeFilter === "Under Review"
+              ? dispute.status === "Under Review"
+              : activeFilter === "Evidence Submitted"
+                ? dispute.evidenceStatus === "Evidence Submitted"
+                : activeFilter === "Resolved"
+                  ? dispute.status === "Resolved"
+                  : activeFilter === "Archived"
+                    ? dispute.status === "Archived"
+                    : dispute.status === "Under Review";
+
+        return (
+          matchesFilter &&
+          matchesQuery([dispute.id, dispute.dealId, dispute.buyer, dispute.seller, dispute.reason, dispute.txHash], searchQuery) &&
+          isWithinDateRange(dispute.updated, dateRange) &&
+          (!evidenceOnly || dispute.evidenceStatus === "Evidence Submitted" || dispute.evidenceFiles.length > 0)
+        );
+      }),
+    [activeFilter, dateRange, disputes, evidenceOnly, searchQuery],
+  );
+  const paginatedDisputes = useMemo(() => paginateItems(filteredDisputes, page, 8), [filteredDisputes, page]);
   const txUrl = getTxExplorerUrl(selectedDispute.txHash);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, dateRange, evidenceOnly, searchQuery]);
+
+  useEffect(() => {
+    if (!filteredDisputes.some((dispute) => dispute.id === selectedDispute.id) && filteredDisputes[0]) {
+      onSelectDispute(filteredDisputes[0].id);
+    }
+  }, [filteredDisputes, onSelectDispute, selectedDispute.id]);
+
+  function exportDisputesCsv() {
+    downloadCsv(
+      "tradelock-disputes.csv",
+      ["Dispute ID", "Deal ID", "Buyer", "Seller", "Reason", "Evidence Status", "Amount", "Status", "Updated", "TX Hash"],
+      filteredDisputes.map((dispute) => [
+        dispute.id,
+        dispute.dealId,
+        dispute.buyer,
+        dispute.seller,
+        dispute.reason,
+        dispute.evidenceStatus,
+        dispute.amount,
+        dispute.status,
+        dispute.updated,
+        dispute.txHash,
+      ]),
+    );
+  }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -36,12 +99,15 @@ export function DisputesDesktopScreen({
         <StatGrid stats={disputesStats} columns="xl:grid-cols-5" compact />
         <Panel>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <FilterRow filters={disputeFilters} />
+            <FilterRow filters={disputeFilters} activeFilter={activeFilter} onSelect={setActiveFilter} />
             <div className="flex flex-wrap gap-2">
-              <ToolbarButton label="Filter" icon={Filter} />
-              <ToolbarButton label="Export CSV" icon={Upload} />
-              <ToolbarButton label="Date Range" icon={Clock3} />
+              <ToolbarButton label={evidenceOnly ? "Evidence Only" : "All Disputes"} icon={Filter} onClick={() => setEvidenceOnly((value) => !value)} />
+              <ToolbarButton label="Export CSV" icon={Upload} onClick={exportDisputesCsv} disabled={filteredDisputes.length === 0} />
+              <ToolbarButton label={dateRangeLabels[dateRange]} icon={Clock3} onClick={() => setDateRange((value) => nextDateRange(value))} />
             </div>
+          </div>
+          <div className="mb-3">
+            <SearchField placeholder="Search disputes, deals, parties..." value={searchQuery} onChange={setSearchQuery} />
           </div>
           <div className="data-scroll overflow-auto rounded-[8px] border border-white/[0.08]">
             <table className="min-w-[1100px] text-left text-[12px]">
@@ -59,7 +125,7 @@ export function DisputesDesktopScreen({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {disputes.map((dispute) => (
+                {paginatedDisputes.items.map((dispute) => (
                   <tr
                     key={dispute.id}
                     onClick={() => onSelectDispute(dispute.id)}
@@ -79,10 +145,26 @@ export function DisputesDesktopScreen({
                     <td className="px-4 py-4 text-[11px] text-slate-400">{dispute.updated}</td>
                   </tr>
                 ))}
+                {paginatedDisputes.items.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-10 text-center text-slate-400">
+                      No disputes match the current filters.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
-          <Pager label={`Showing 1 to ${disputes.length} of ${disputes.length} disputes`} />
+          <Pager
+            label={
+              paginatedDisputes.totalItems === 0
+                ? "Showing 0 disputes"
+                : `Showing ${paginatedDisputes.startIndex + 1} to ${paginatedDisputes.endIndex} of ${paginatedDisputes.totalItems} disputes`
+            }
+            currentPage={paginatedDisputes.page}
+            totalPages={paginatedDisputes.totalPages}
+            onPageChange={setPage}
+          />
         </Panel>
       </div>
 
@@ -134,15 +216,43 @@ export function DisputesMobileScreen({
   onSelectDispute: (id: string) => void;
 }) {
   const { data } = useTradeLockData();
-  const { disputes } = data;
+  const { disputes, disputeFilters } = data;
+  const [activeFilter, setActiveFilter] = useState(disputeFilters[0] ?? "All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const filteredDisputes = useMemo(
+    () =>
+      disputes.filter((dispute) => {
+        const matchesFilter =
+          activeFilter === "All"
+            ? true
+            : activeFilter === "Under Review"
+              ? dispute.status === "Under Review"
+              : activeFilter === "Evidence Submitted"
+                ? dispute.evidenceStatus === "Evidence Submitted"
+                : activeFilter === "Resolved"
+                  ? dispute.status === "Resolved"
+                  : activeFilter === "Archived"
+                    ? dispute.status === "Archived"
+                    : dispute.status === "Under Review";
+
+        return matchesFilter && matchesQuery([dispute.id, dispute.dealId, dispute.buyer, dispute.seller, dispute.reason], searchQuery);
+      }),
+    [activeFilter, disputes, searchQuery],
+  );
+  const paginatedDisputes = useMemo(() => paginateItems(filteredDisputes, page, 5), [filteredDisputes, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, searchQuery]);
 
   return (
     <div className="space-y-5">
       <MobilePageHeader title="Disputes" description="Review evidence and resolve frozen escrow flows." />
-      <SearchField placeholder="Search disputes, deals..." />
-      <FilterRow filters={["All", "Under Review", "Resolved"]} compact />
+      <SearchField placeholder="Search disputes, deals..." value={searchQuery} onChange={setSearchQuery} />
+      <FilterRow filters={disputeFilters} compact activeFilter={activeFilter} onSelect={setActiveFilter} />
       <div className="space-y-3">
-        {disputes.map((dispute) => (
+        {paginatedDisputes.items.map((dispute) => (
           <MobileListCard
             key={dispute.id}
             active={selectedDispute.id === dispute.id}
@@ -154,6 +264,16 @@ export function DisputesMobileScreen({
           />
         ))}
       </div>
+      <Pager
+        label={
+          paginatedDisputes.totalItems === 0
+            ? "Showing 0 disputes"
+            : `Showing ${paginatedDisputes.startIndex + 1} to ${paginatedDisputes.endIndex} of ${paginatedDisputes.totalItems} disputes`
+        }
+        currentPage={paginatedDisputes.page}
+        totalPages={paginatedDisputes.totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 }

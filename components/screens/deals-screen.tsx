@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Clock3, Filter, Plus, Upload } from "lucide-react";
 
+import { downloadCsv } from "@/lib/browser-export";
+import { dateRangeLabels, isWithinDateRange, matchesQuery, nextDateRange, paginateItems, type DateRangeKey } from "@/lib/list-controls";
 import type { Deal } from "@/lib/types";
 import { useTradeLockData } from "@/components/tradelock-data-provider";
 import {
@@ -38,12 +41,72 @@ export function DealsDesktopScreen({
     isDealActionPending,
   } = useTradeLockData();
   const { dealFilters, deals, dealsStats } = data;
+  const [activeFilter, setActiveFilter] = useState(dealFilters[0] ?? "All Deals");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeKey>("all");
+  const [onlyOnchain, setOnlyOnchain] = useState(false);
+  const [page, setPage] = useState(1);
   const walletReady = walletState.isConnected && walletState.isCorrectNetwork && walletState.contractReady;
   const canApprove = walletReady && selectedDeal.status === "Active" && selectedDeal.progress === "0/3";
   const canFund = walletReady && selectedDeal.status === "Active" && selectedDeal.progress === "0/3";
   const canUploadProof = walletReady && (selectedDeal.status === "Funded" || selectedDeal.status === "Active" || selectedDeal.status === "Waiting Proof");
   const canRelease = walletReady && (selectedDeal.status === "Funded" || selectedDeal.status === "Proof Verified" || selectedDeal.status === "Ready to Release");
   const canDispute = walletReady && (selectedDeal.status === "Funded" || selectedDeal.status === "Proof Verified" || selectedDeal.status === "Ready to Release" || selectedDeal.status === "Active");
+  const filteredDeals = useMemo(
+    () =>
+      deals.filter((deal) => {
+        const matchesFilter =
+          activeFilter === "All Deals"
+            ? true
+            : activeFilter === "Active"
+              ? ["Active", "Funded", "Waiting Proof", "Proof Verified", "Ready to Release"].includes(deal.status)
+              : activeFilter === "Waiting Proof"
+                ? deal.proofStatus === "Waiting Proof"
+                : activeFilter === "Ready to Release"
+                  ? deal.status === "Ready to Release"
+                  : activeFilter === "Disputed"
+                    ? deal.status === "Disputed"
+                    : deal.status === "Completed";
+
+        return (
+          matchesFilter &&
+          matchesQuery([deal.id, deal.buyer, deal.seller, deal.amountRaw, deal.network, deal.txHash, deal.proofHash], searchQuery) &&
+          isWithinDateRange(deal.updated, dateRange) &&
+          (!onlyOnchain || deal.txHash.startsWith("0x"))
+        );
+      }),
+    [activeFilter, dateRange, deals, onlyOnchain, searchQuery],
+  );
+  const paginatedDeals = useMemo(() => paginateItems(filteredDeals, page, 8), [filteredDeals, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, dateRange, onlyOnchain, searchQuery]);
+
+  useEffect(() => {
+    if (!filteredDeals.some((deal) => deal.id === selectedDeal.id) && filteredDeals[0]) {
+      onSelectDeal(filteredDeals[0].id);
+    }
+  }, [filteredDeals, onSelectDeal, selectedDeal.id]);
+
+  function exportDealsCsv() {
+    downloadCsv(
+      "tradelock-deals.csv",
+      ["Deal ID", "Buyer", "Seller", "Amount", "Progress", "Proof Status", "Status", "Network", "Updated", "TX Hash"],
+      filteredDeals.map((deal) => [
+        deal.id,
+        deal.buyer,
+        deal.seller,
+        deal.amount,
+        deal.progress,
+        deal.proofStatus,
+        deal.status,
+        deal.network,
+        deal.updated,
+        deal.txHash,
+      ]),
+    );
+  }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -52,12 +115,15 @@ export function DealsDesktopScreen({
 
         <Panel>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <FilterRow filters={dealFilters} />
+            <FilterRow filters={dealFilters} activeFilter={activeFilter} onSelect={setActiveFilter} />
             <div className="flex flex-wrap gap-2">
-              <ToolbarButton label="Filter" icon={Filter} />
-              <ToolbarButton label="Export CSV" icon={Upload} />
-              <ToolbarButton label="Date Range" icon={Clock3} />
+              <ToolbarButton label={onlyOnchain ? "On-chain Only" : "All Records"} icon={Filter} onClick={() => setOnlyOnchain((value) => !value)} />
+              <ToolbarButton label="Export CSV" icon={Upload} onClick={exportDealsCsv} disabled={filteredDeals.length === 0} />
+              <ToolbarButton label={dateRangeLabels[dateRange]} icon={Clock3} onClick={() => setDateRange((value) => nextDateRange(value))} />
             </div>
+          </div>
+          <div className="mb-3">
+            <SearchField placeholder="Search deals, counterparties, hashes..." value={searchQuery} onChange={setSearchQuery} />
           </div>
 
           <div className="data-scroll overflow-auto rounded-[8px] border border-white/[0.08]">
@@ -76,7 +142,7 @@ export function DealsDesktopScreen({
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {deals.map((deal) => (
+                {paginatedDeals.items.map((deal) => (
                   <tr
                     key={deal.id}
                     onClick={() => onSelectDeal(deal.id)}
@@ -107,11 +173,27 @@ export function DealsDesktopScreen({
                     <td className="px-4 py-4 text-[11px] text-slate-400">{deal.updated}</td>
                   </tr>
                 ))}
+                {paginatedDeals.items.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-10 text-center text-slate-400">
+                      No deals match the current filters.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
 
-          <Pager label={`Showing 1 to ${deals.length} of ${deals.length} deals`} />
+          <Pager
+            label={
+              paginatedDeals.totalItems === 0
+                ? "Showing 0 deals"
+                : `Showing ${paginatedDeals.startIndex + 1} to ${paginatedDeals.endIndex} of ${paginatedDeals.totalItems} deals`
+            }
+            currentPage={paginatedDeals.page}
+            totalPages={paginatedDeals.totalPages}
+            onPageChange={setPage}
+          />
         </Panel>
       </div>
 
@@ -163,21 +245,49 @@ export function DealsMobileScreen({
     isDealActionPending,
     openDisputeForDeal,
   } = useTradeLockData();
-  const { deals } = data;
+  const { deals, dealFilters } = data;
+  const [activeFilter, setActiveFilter] = useState(dealFilters[0] ?? "All Deals");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
   const walletReady = walletState.isConnected && walletState.isCorrectNetwork && walletState.contractReady;
   const canApprove = walletReady && selectedDeal.status === "Active" && selectedDeal.progress === "0/3";
   const canFund = walletReady && selectedDeal.status === "Active" && selectedDeal.progress === "0/3";
   const canUploadProof = walletReady && (selectedDeal.status === "Funded" || selectedDeal.status === "Active" || selectedDeal.status === "Waiting Proof");
   const canRelease = walletReady && (selectedDeal.status === "Funded" || selectedDeal.status === "Proof Verified" || selectedDeal.status === "Ready to Release");
   const canDispute = walletReady && (selectedDeal.status === "Funded" || selectedDeal.status === "Proof Verified" || selectedDeal.status === "Ready to Release" || selectedDeal.status === "Active");
+  const filteredDeals = useMemo(
+    () =>
+      deals.filter((deal) => {
+        const matchesFilter =
+          activeFilter === "All Deals"
+            ? true
+            : activeFilter === "Active"
+              ? ["Active", "Funded", "Waiting Proof", "Proof Verified", "Ready to Release"].includes(deal.status)
+              : activeFilter === "Waiting Proof"
+                ? deal.proofStatus === "Waiting Proof"
+                : activeFilter === "Ready to Release"
+                  ? deal.status === "Ready to Release"
+                  : activeFilter === "Disputed"
+                    ? deal.status === "Disputed"
+                    : deal.status === "Completed";
+
+        return matchesFilter && matchesQuery([deal.id, deal.buyer, deal.seller, deal.amountRaw, deal.txHash], searchQuery);
+      }),
+    [activeFilter, deals, searchQuery],
+  );
+  const paginatedDeals = useMemo(() => paginateItems(filteredDeals, page, 5), [filteredDeals, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, searchQuery]);
 
   return (
     <div className="space-y-5">
       <MobilePageHeader title="Deals" description="Search, filter, and review escrow deals." />
-      <SearchField placeholder="Search deals, counterparties..." />
-      <FilterRow filters={["All", "Active", "Disputed"]} compact />
+      <SearchField placeholder="Search deals, counterparties..." value={searchQuery} onChange={setSearchQuery} />
+      <FilterRow filters={dealFilters} compact activeFilter={activeFilter} onSelect={setActiveFilter} />
       <div className="space-y-3">
-        {deals.slice(0, 5).map((deal) => (
+        {paginatedDeals.items.map((deal) => (
           <MobileListCard
             key={deal.id}
             active={selectedDeal.id === deal.id}
@@ -189,6 +299,16 @@ export function DealsMobileScreen({
           />
         ))}
       </div>
+      <Pager
+        label={
+          paginatedDeals.totalItems === 0
+            ? "Showing 0 deals"
+            : `Showing ${paginatedDeals.startIndex + 1} to ${paginatedDeals.endIndex} of ${paginatedDeals.totalItems} deals`
+        }
+        currentPage={paginatedDeals.page}
+        totalPages={paginatedDeals.totalPages}
+        onPageChange={setPage}
+      />
       <Panel title="Selected Deal" action={<StatusBadge status={selectedDeal.status} compact />}>
         <div className="space-y-3 text-sm">
           <div className="grid grid-cols-2 gap-3">

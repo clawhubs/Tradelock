@@ -947,6 +947,32 @@ function TradeLockShell() {
   }, []);
 
   useEffect(() => {
+    const refreshMarket = () => {
+      void syncAppState({ notifyOnError: false });
+      void syncCustodySnapshot();
+    };
+    const refreshStatus = () => {
+      void syncSystemStatus();
+    };
+    const handleFocus = () => {
+      refreshMarket();
+      refreshStatus();
+    };
+    const marketInterval = window.setInterval(refreshMarket, 10_000);
+    const statusInterval = window.setInterval(refreshStatus, 60_000);
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      window.clearInterval(marketInterval);
+      window.clearInterval(statusInterval);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, []);
+
+  useEffect(() => {
     const provider = getInjectedProvider();
 
     void refreshWalletState();

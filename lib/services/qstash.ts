@@ -14,9 +14,9 @@ const scheduleDefinitions: QStashScheduleDefinition[] = [
   {
     scheduleId: "tradelock-activity-v1",
     label: "tradelock-activity",
-    cron: "*/5 * * * *",
+    cron: "* * * * *",
     path: "/api/cron/activity",
-    description: "Runs the live escrow activity cycle every 5 minutes.",
+    description: "Runs the live escrow activity cycle every minute.",
   },
   {
     scheduleId: "tradelock-daily-user-v1",

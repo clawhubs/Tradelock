@@ -331,7 +331,7 @@ function createInitialRegistry(targetUserCount: number, dailyUserStartDate: stri
     automation: {
       targetUserCount,
       dailyUserStartDate,
-      activityIntervalSeconds: 300,
+      activityIntervalSeconds: 60,
       activityEnabled: true,
       dailyUserEnabled: true,
       nextBuyerSequence: 1,
@@ -344,7 +344,19 @@ function createInitialRegistry(targetUserCount: number, dailyUserStartDate: stri
 
 async function readRegistry() {
   const redis = getRedisOrThrow();
-  return (await redis.get<CustodialRegistry>(registryKey)) ?? null;
+  const registry = (await redis.get<CustodialRegistry>(registryKey)) ?? null;
+
+  if (!registry) {
+    return null;
+  }
+
+  if (registry.automation.activityIntervalSeconds !== 60) {
+    registry.automation.activityIntervalSeconds = 60;
+    registry.updatedAt = nowIso();
+    await redis.set(registryKey, registry);
+  }
+
+  return registry;
 }
 
 async function writeRegistry(registry: CustodialRegistry) {
@@ -987,6 +999,7 @@ export async function bootstrapCustodialRegistry(options: {
 
   registry.automation.targetUserCount = options.targetUserCount;
   registry.automation.dailyUserStartDate = options.dailyUserStartDate;
+  registry.automation.activityIntervalSeconds = 60;
 
   for (const input of options.importedWallets) {
     upsertWallet(registry, buildWalletRecord(input, "imported"));
@@ -1262,6 +1275,7 @@ export async function rebuildLiveWorkspaceState() {
   }
 
   const liveState = buildLivePersistedState(registry);
+  registry.automation.activityIntervalSeconds = 60;
   const replaced = await replaceSupabaseState(liveState);
 
   if (!replaced) {
