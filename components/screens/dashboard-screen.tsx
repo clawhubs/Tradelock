@@ -102,6 +102,23 @@ const LOCATION_COORDS: Record<string, [number, number]> = {
   "Hong Kong": [114.2, 22.3], "Vietnam": [105.8, 21], "Canada": [-96.8, 56.1],
   "Mexico": [-102.6, 23.6], "Turkey": [35.2, 38.9], "Istanbul": [28.97, 41.01], "Ankara": [32.85, 39.93],
   "Russia": [105.3, 61.5], "Saudi Arabia": [45.1, 23.9], "Philippines": [121.8, 12.9],
+  "Nigeria": [8.68, 9.08], "Lagos": [3.4, 6.45],
+  "Egypt": [30.8, 26.8], "Cairo": [31.25, 30.06],
+  "Kenya": [37.9, 0.02], "Nairobi": [36.82, -1.29],
+  "South Africa": [25.0, -29.0], "Johannesburg": [28.05, -26.2], "Cape Town": [18.42, -33.93],
+  "Morocco": [-7.09, 31.79], "Casablanca": [-7.59, 33.59],
+  "Argentina": [-63.6, -38.4], "Buenos Aires": [-58.38, -34.6],
+  "São Paulo": [-46.63, -23.55], "Chile": [-71.5, -35.7],
+  "Colombia": [-74.3, 4.6], "Peru": [-76.0, -9.19],
+  "Mexico City": [-99.13, 19.43],
+  "Riyadh": [46.7, 24.7], "Jeddah": [39.19, 21.49],
+  "Jakarta": [106.82, -6.18], "Kuala Lumpur": [101.7, 3.15],
+  "Bangkok": [100.5, 13.75], "Ho Chi Minh City": [106.63, 10.82], "Hanoi": [105.85, 21.03],
+  "Manila": [120.98, 14.6], "Colombo": [79.86, 6.93],
+  "Karachi": [67.0, 24.86], "Pakistan": [69.3, 30.4],
+  "Bangladesh": [90.4, 23.7], "Dhaka": [90.41, 23.78],
+  "Uzbekistan": [63.9, 41.4], "Tashkent": [69.27, 41.3],
+  "Kazakhstan": [66.9, 48.0], "Almaty": [76.9, 43.25],
 };
 
 const ROUTE_COLORS = ["#f59e0b","#60a5fa","#34d399","#f472b6","#a78bfa","#22d3ee","#fb923c"];
